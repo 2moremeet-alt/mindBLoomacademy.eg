@@ -310,6 +310,7 @@ MB.init = function () {
   setTxt('fAddr', s.footerAddr);
   setTxt('fWa', s.footerWa);
   setTxt('fTel', s.footerTel);
+  setTxt('footerCredit', s.footerCredit);
 
   /* التواصل */
   if ($('cAddr')) $('cAddr').textContent = ct.addr;

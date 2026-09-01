@@ -54,6 +54,19 @@
   .item .del:hover{background:var(--pink);color:#fff}
   .hint-global{background:linear-gradient(90deg,rgba(46,196,182,.14),rgba(255,183,3,.12));border:2px dashed var(--turq);border-radius:14px;padding:14px 16px;font-size:.86rem;margin-bottom:18px;line-height:1.9}
   .hint-global b{color:var(--navy)}
+  .img-tip{font-size:.78rem;color:var(--muted);background:#f4f8fc;border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.8}
+  .prev-img{margin-top:8px;display:none}
+  .prev-img img{max-height:110px;border-radius:10px;border:2px solid #e3ecf5;display:block}
+  .prev-img.ok{display:block}
+  .prev-img.ok img{border-color:var(--green)}
+  .prev-img.ok::after{content:'✅ الرابط شغال — الصورة دي هتظهر في الموقع';color:var(--green);font-size:.72rem;font-weight:800;margin-top:4px}
+  .prev-img.bad{display:block}
+  .prev-img.bad img{display:none}
+  .prev-img.bad::after{content:'⚠️ الرابط ده مش شغال — اتأكدي إنه رابط مباشر للصورة (يخلص بـ .jpg/.png) مش لينك منشور أو صفحة. لو من جوجل درايف: المشاركة لازم تكون "أي حد عنده الرابط".';color:var(--pink);font-size:.75rem;font-weight:700;margin-top:4px}
+  .chk-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid #e3ecf5;border-radius:10px;margin-bottom:6px;font-size:.82rem;background:#fbfdfe}
+  .chk-ok{color:var(--green);font-weight:800;white-space:nowrap}
+  .chk-err{color:var(--pink);font-weight:700;font-size:.75rem;text-align:left}
+  .chk-warn{color:var(--muted);font-weight:700}
   .add{width:100%;border:2px dashed var(--turq);color:var(--turq-d);background:none;font-weight:800;font-family:inherit;padding:12px;border-radius:12px;cursor:pointer;font-size:.9rem}
   .add:hover{background:rgba(46,196,182,.08)}
   .savebar{position:fixed;bottom:0;right:0;left:0;background:#fff;box-shadow:0 -8px 24px rgba(23,53,107,.15);padding:12px 16px;display:flex;gap:10px;justify-content:center;z-index:60}
@@ -88,7 +101,7 @@
   <header>
     <div class="in">
       <b>🔐 لوحة تحكم MindBloom Academy</b>
-      <span style="font-size:.7rem;opacity:.65">الإصدار v3</span>
+      <span style="font-size:.7rem;opacity:.65">الإصدار v4</span>
       <span class="sp"></span>
       <button class="hbtn" onclick="location.reload()">🔄 تحديث</button>
       <button class="hbtn" onclick="location.href='index.html'">🌐 عرض الموقع</button>
@@ -137,11 +150,11 @@ function showTab(i){
 
 /* case 12: النصوص الثابتة والفورمات */
 /* ═══ أدوات بناء الحقول ═══ */
-function f(path, label, val, ta, ph){
+function f(path, label, val, ta, ph, extra){
   const v = ta ? (val || '') : (val ?? '');
   const inner = ta
     ? `<textarea rows="3" data-p="${path}">${esc(v)}</textarea>`
-    : `<input type="text" data-p="${path}" value="${escAttr(v)}" placeholder="${ph||''}">`;
+    : `<input type="text" data-p="${path}" value="${escAttr(v)}" placeholder="${ph||''}"${extra||''}>`;
   return `<div class="f"><label>${label}</label>${inner}</div>`;
 }
 function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -256,12 +269,15 @@ function buildPanel(i){
     case 12: /* النصوص الثابتة والفورمات */
       const s = cfg.site, fm = cfg.forms;
       return `<section class="panel">
-        <div class="card"><h3>🖼️ كل أماكن الصور (بملف أو برابط مباشر)<small>كتبي اسم ملف داخل فولدر images/ (مثل images/in-1-reception.jpg) <b>أو رابط صورة كامل من الإنترنت</b> (مثل https://…) — في كل الأماكن دي.</small></h3>
-          ${f('site.logo','اللوجو (الموقع + الاستمارات + الـ PDF)',s.logo)}
-          ${f('site.heroImg','الصورة الكبيرة في الواجهة الرئيسية',s.heroImg)}
+        <div class="card"><h3>🖼️ كل أماكن الصور (بملف أو برابط مباشر)<small>كتبي اسم ملف داخل فولدر images/ (مثل images/in-1-reception.jpg) <b>أو رابط صورة كامل من الإنترنت</b> (مثل https://…) — في كل الأماكن دي. تحت كل حقل هتلاقي <b>معاينة حية</b> بتقولك الرابط شغال ولا لأ.</small></h3>
+          <div class="img-tip">💡 <b>عشان الرابط يشتغل لازم:</b> (١) يكون <b>رابط مباشر</b> للصورة نفسها (يخلص بـ .jpg/.png) — لو فتحته في تبويب جديد وصورة ظهرت = تمام. (٢) <b>مش من واتساب/فيسبوك</b> (روابطهم مؤقتة بتتقفل). (٣) لو من <b>جوجل درايف</b>: مشروعات = "أي حد عنده الرابط".</div>
+          ${f('site.logo','اللوجو (الموقع + الاستمارات + الـ PDF)',s.logo, 0, '', ' data-imgprev="1"')}
+          ${f('site.heroImg','الصورة الكبيرة في الواجهة الرئيسية',s.heroImg, 0, '', ' data-imgprev="1"')}
           ${f('site.heroBadge1','الشارة الأولى جنب الصورة (اتحذف لو فضيت)',s.heroBadge1)}
           ${f('site.heroBadge2','الشارة التانية جنب الصورة (اتحذف لو فضيت)',s.heroBadge2)}
-          <p style="font-size:.8rem;color:var(--muted);margin-top:10px">📌 صور الجاليري بتتعديل من تبويب "الجاليري" وصور الفريق من تبويب "الفريق" — وكمان برابط.</p></div>
+          <button class="add" style="width:auto;padding:10px 22px" onclick="checkImages()">🔎 فحص كل صور الموقع دلوقتي</button>
+          <div id="imgCheckOut" style="margin-top:10px"></div>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:12px">📌 صور الجاليري (تبويب "الجاليري") وصور الفريق (تبويب "الفريق") عندهم معاينة حية كمان — والمعاينة بتشتغل على نفس المتصفح اللي بتفتحي منه الموقع، فلو هيطلع ✅ هنا هيظهر في الموقع.</p></div>
         <div class="card"><h3>🧭 القائمة والهوية</h3>
           ${f('site.navTitle','اسم الموقع بالقائمة',s.navTitle)}
           ${f('site.navSub','السطر الصغير تحت الاسم',s.navSub)}
@@ -283,7 +299,8 @@ function buildPanel(i){
           <h3 style="margin-top:18px">📄 سطور الفوتر</h3>
           ${f('site.footerAddr','سطر العنوان',s.footerAddr)}
           ${f('site.footerWa','سطر الواتساب',s.footerWa)}
-          ${f('site.footerTel','سطر التليفون',s.footerTel)}</div>
+          ${f('site.footerTel','سطر التليفون',s.footerTel)}
+          ${f('site.footerCredit','سطر الاسم آخر الموقع (تحت 2026)',s.footerCredit)}</div>
         <div class="card"><h3>📲 روابط القائمة العلوية (إضافة/حذف)</h3>
           <div id="navList"></div>
           <button class="add" onclick="addNav()">+ إضافة رابط</button></div>
@@ -305,7 +322,7 @@ const ARR_NAMES = { quick:'زر اختصار', depts:'قسم', programs:'مرح�
 function itemTpl(arr, idx, fields){
   return `<div class="item" data-arr="${arr}" data-i="${idx}">
     <div class="item-head"><span class="t">✎ ${ARR_NAMES[arr] || 'عنصر'} ${idx+1}</span><button class="del" onclick="delItem('${arr}',${idx})">✕ حذف</button></div>
-    ${fields.map(fd => { const key = fd[0], lbl = fd[1], ta = fd[2]; const val = key === 'items' ? (cfg[arr][idx][key] || []).join('\n') : cfg[arr][idx][key]; return f(`${arr}[${idx}].${key}`, lbl, val, ta); }).join('')}
+    ${fields.map(fd => { const key = fd[0], lbl = fd[1], ta = fd[2]; const val = key === 'items' ? (cfg[arr][idx][key] || []).join('\n') : cfg[arr][idx][key]; const prev = (key === 'src' || key === 'img') ? ' data-imgprev="1"' : ''; return f(`${arr}[${idx}].${key}`, lbl, val, ta, '', prev); }).join('')}
   </div>`;
 }
 function bindLists(){
@@ -400,6 +417,7 @@ function showTabCurrent(){
   const fresh = buildPanel(i);
   on.outerHTML = fresh;
   bindLists();
+  bindImgPrev();
 }
 
 /* ═══ الحفظ ═══ */
@@ -505,6 +523,49 @@ function resetCfg(){
   if (confirm('متأكدة؟ هترجع كل الإعدادات زي الافتراضي (النسخة الاحتياطية هتبقى هي الخلاص لو مسيتها)')){
     MB.reset(); location.reload();
   }
+}
+
+/* ═══ معاينة حية لأي حقل صورة ═══ */
+function bindImgPrev(){
+  document.querySelectorAll('[data-imgprev]').forEach(inp => {
+    if (inp.__prevBound) return;
+    inp.__prevBound = true;
+    const wrap = inp.closest('.f');
+    if (!wrap) return;
+    let box = wrap.querySelector('.prev-img');
+    if (!box){ box = document.createElement('div'); box.className = 'prev-img'; wrap.appendChild(box); }
+    const render = () => {
+      const v = inp.value.trim();
+      if (!v){ box.className = 'prev-img'; box.innerHTML = ''; return; }
+      box.className = 'prev-img';
+      box.innerHTML = `<img src="${escAttr(v)}" alt="معاينة" onload="this.parentNode.classList.add('ok')" onerror="this.parentNode.classList.add('bad')">`;
+    };
+    inp.addEventListener('input', render);
+    render();
+  });
+}
+
+/* ═══ فحص كل صور الموقع من نفس المتصفح ═══ */
+function checkImages(){
+  const c = MB.get();
+  const list = [
+    ['اللوجو', c.site.logo],
+    ['صورة الواجهة الرئيسية', c.site.heroImg],
+    ...c.gallery.map((g, i) => ['صورة الجاليري ' + (i + 1), g.src]),
+    ...c.team.map((t, i) => ['صورة الفريق: ' + (t.name || (i + 1)), t.img])
+  ];
+  const box = document.getElementById('imgCheckOut');
+  box.innerHTML = '<p style="font-size:.85rem;color:var(--muted)">⏳ بيتفحص… (عادي تاخد ٥–١٠ ثواني)</p>';
+  const rows = list.map(([name, src]) => new Promise(res => {
+    if (!src){ res(`<div class="chk-row"><span>${name}</span><span class="chk-warn">⚪ فاضية (هتظهر بديل احترافي)</span></div>`); return; }
+    const im = new Image();
+    const done = (ok, msg) => res(`<div class="chk-row"><span>${name}</span><span class="${ok ? 'chk-ok' : 'chk-err'}">${msg}</span></div>`);
+    const t = setTimeout(() => done(false, '⏱️ بطيء أو مقفول — جربي الرابط في تبويب جديد'), 9000);
+    im.onload = () => { clearTimeout(t); done(true, '✅ شغال'); };
+    im.onerror = () => { clearTimeout(t); done(false, '❌ مش شغال'); };
+    im.src = src;
+  }));
+  Promise.all(rows).then(rs => { box.innerHTML = rs.join(''); });
 }
 
 /* فتح اللوحة تلقائيًا لو دخلتِ بالكلمة قبل كده (بعد ما كل التعريفات اتجهزت) */
