@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>لوحة التحكم | MindBloom Academy</title>
+<script src="config-v2.js"></script>
+<style>
+  :root{--navy:#17356b;--navy-d:#0f2547;--turq:#2ec4b6;--amber:#ffb703;--pink:#ef476f;--bg:#f2f6fb;--ink:#1c2b3a;--muted:#5d7285;--shadow:0 6px 20px rgba(23,53,107,.08)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Segoe UI","Cairo",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;min-height:100vh}
+  .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#0f2547,#1d4b8f)}
+  .gate-box{background:#fff;border-radius:22px;padding:36px;width:100%;max-width:400px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+  .gate-box h1{color:var(--navy);font-size:1.3rem}
+  .gate-box p{color:var(--muted);font-size:.85rem;margin:8px 0 18px}
+  .gate-box input{width:100%;padding:13px;border:2px solid #e3ecf5;border-radius:12px;font-size:1rem;text-align:center}
+  .gate-box input:focus{outline:none;border-color:var(--turq)}
+  .gate-box .err{color:var(--pink);font-size:.8rem;margin-top:8px;display:none}
+  .gate-box button{width:100%;margin-top:14px;background:var(--amber);color:var(--navy-d);font-weight:800;padding:13px;border:none;border-radius:12px;font-size:1rem;cursor:pointer;font-family:inherit}
+  .gate-box button.back{background:none;color:var(--muted);font-weight:700;margin-top:8px}
+
+  header{background:var(--navy-d);color:#fff;padding:14px 20px;position:sticky;top:0;z-index:50}
+  header .in{max-width:1150px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header b{font-size:1.05rem}
+  header .sp{flex:1}
+  .hbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-weight:700;font-size:.85rem;padding:8px 16px;border-radius:10px;cursor:pointer;font-family:inherit;transition:.2s}
+  .hbtn:hover{background:var(--turq);border-color:var(--turq)}
+  .hbtn.amber{background:var(--amber);color:var(--navy-d);border:none}
+
+  .tabs{background:#fff;box-shadow:var(--shadow);position:sticky;top:60px;z-index:40;overflow-x:auto;white-space:nowrap}
+  .tabs .in{max-width:1150px;margin:0 auto;display:flex;gap:4px;padding:8px 14px}
+  .tabs button{border:none;background:none;font-family:inherit;font-weight:700;font-size:.85rem;color:var(--muted);padding:9px 14px;border-radius:10px;cursor:pointer;white-space:nowrap}
+  .tabs button.on{background:rgba(46,196,182,.14);color:var(--navy)}
+  main{max-width:1150px;margin:0 auto;padding:24px 16px 90px}
+  .panel{display:none}
+  .panel.on{display:block}
+  .card{background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+  .card h3{color:var(--navy);margin-bottom:14px;font-size:1.05rem}
+  .card h3 small{display:block;color:var(--muted);font-weight:400;font-size:.78rem;margin-top:2px}
+  .f{margin-bottom:12px}
+  .f label{display:block;font-weight:700;color:var(--navy);font-size:.85rem;margin-bottom:4px}
+  .f input[type=text],.f input[type=url],.f input[type=number],.f textarea,.f select{width:100%;padding:10px 12px;border:2px solid #e3ecf5;border-radius:10px;font-family:inherit;font-size:.9rem;background:#fbfdfe}
+  .f input:focus,.f textarea:focus{outline:none;border-color:var(--turq)}
+  .f textarea{resize:vertical}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:700px){.grid2{grid-template-columns:1fr}}
+  .item{border:2px solid #e9f0f7;border-radius:14px;padding:14px;margin-bottom:12px;position:relative;background:#fbfdfe}
+  .item-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .item-head .t{font-weight:800;color:var(--navy);font-size:.82rem;background:rgba(46,196,182,.1);border:1.5px dashed var(--turq);padding:4px 14px;border-radius:999px}
+  .item .del{background:#fdecec;color:var(--pink);border:none;height:30px;padding:0 14px;border-radius:999px;cursor:pointer;font-size:.8rem;font-weight:800;font-family:inherit}
+  .item .del:hover{background:var(--pink);color:#fff}
+  .hint-global{background:linear-gradient(90deg,rgba(46,196,182,.14),rgba(255,183,3,.12));border:2px dashed var(--turq);border-radius:14px;padding:14px 16px;font-size:.86rem;margin-bottom:18px;line-height:1.9}
+  .hint-global b{color:var(--navy)}
+  .add{width:100%;border:2px dashed var(--turq);color:var(--turq-d);background:none;font-weight:800;font-family:inherit;padding:12px;border-radius:12px;cursor:pointer;font-size:.9rem}
+  .add:hover{background:rgba(46,196,182,.08)}
+  .savebar{position:fixed;bottom:0;right:0;left:0;background:#fff;box-shadow:0 -8px 24px rgba(23,53,107,.15);padding:12px 16px;display:flex;gap:10px;justify-content:center;z-index:60}
+  .savebar button{background:var(--turq);color:#fff;font-weight:800;border:none;padding:13px 34px;border-radius:12px;font-size:1rem;cursor:pointer;font-family:inherit}
+  .savebar button:hover{background:var(--turq-d)}
+  .toast{position:fixed;top:76px;right:50%;transform:translateX(50%);background:var(--navy-d);color:#fff;padding:12px 26px;border-radius:12px;font-weight:700;z-index:99;opacity:0;transition:.3s;pointer-events:none}
+  .toast.on{opacity:1}
+  table.subs{width:100%;border-collapse:collapse;font-size:.85rem}
+  table.subs th{background:var(--navy);color:#fff;padding:10px;text-align:right;font-size:.8rem}
+  table.subs td{padding:10px;border-bottom:1px solid #edf2f8;vertical-align:top}
+  .pill{display:inline-block;background:rgba(46,196,182,.14);color:var(--turq-d);font-weight:800;font-size:.75rem;padding:2px 10px;border-radius:999px}
+  .subtable-wrap{overflow-x:auto}
+  pre.code{background:var(--navy-d);color:#cfe0f5;border-radius:12px;padding:16px;font-size:.75rem;overflow-x:auto;line-height:1.6;direction:ltr;text-align:left}
+</style>
+</head>
+<body>
+
+<!-- ═══ بوابة كلمة المرور ═══ -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <h1>🔐 لوحة تحكم MindBloom</h1>
+    <p>هده لوحة خاصة بإدارة الأكاديمية — ادخلي كلمة المرور للمتابعة</p>
+    <input type="password" id="gatePwd" placeholder="كلمة المرور" autocomplete="off">
+    <div class="err" id="gateErr">كلمة المرور غلط</div>
+    <button onclick="gateIn()">دخول</button>
+    <button class="back" onclick="location.href='index.html'">← الرجوع للموقع</button>
+  </div>
+</div>
+
+<!-- ═══ اللوحة ═══ -->
+<div id="dash" style="display:none">
+  <header>
+    <div class="in">
+      <b>🔐 لوحة تحكم MindBloom Academy</b>
+      <span style="font-size:.7rem;opacity:.65">الإصدار v3</span>
+      <span class="sp"></span>
+      <button class="hbtn" onclick="location.reload()">🔄 تحديث</button>
+      <button class="hbtn" onclick="location.href='index.html'">🌐 عرض الموقع</button>
+      <button class="hbtn amber" onclick="saveAll()">💾 حفظ كل التعديلات</button>
+    </div>
+  </header>
+  <div class="tabs"><div class="in" id="tabBar"></div></div>
+  <main>
+    <div class="hint-global">👇 <b>إزاي تعدّلي كل حاجة؟</b> كل صنف (سؤال / صورة / قسم / رابط / شارة…) جوه <b>صندوق مستقل عليه اسمه ورقمه</b> —
+      ✎ عدّلي أي حقل جواه مباشرة · <b style="color:var(--pink)">✕ حذف</b> بيحذفه · وزر <b style="color:var(--turq-d)">+ إضافة</b> تحت كل القائمة بيزودك صنف جديد.
+      وآخر خطوة: <b>💾 حفظ كل التعديلات</b> (أعلى أو تحت).</div>
+    <div id="panels"></div>
+  </main>
+  <div class="savebar"><button onclick="saveAll()">💾 حفظ كل التعديلات</button></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ البوابة ═══ */
+function gateIn(){
+  if (document.getElementById('gatePwd').value === MB.PWD){
+    sessionStorage.setItem('mb_admin_ok', '1');
+    showDash();
+  } else document.getElementById('gateErr').style.display = 'block';
+}
+document.getElementById('gatePwd').addEventListener('keydown', e => { if (e.key === 'Enter') gateIn(); });
+function toast(m){ const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 2200); }
+
+let cfg = MB.get();
+const TABS = ['البنر المتحرك','النصوص الرئيسية','التواصل والعنوان','الأسرع والأقسام','البرامج والخطوات','ليه MindBloom','الكيويز','الجاليري','الفريق','قصص الأهل','الأسئلة الشائعة','الطلبات والمزامنة','النصوص الثابتة والفورمات'];
+
+function showDash(){
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('dash').style.display = '';
+  const bar = document.getElementById('tabBar'), panels = document.getElementById('panels');
+  bar.innerHTML = TABS.map((t, i) => `<button class="${i===0?'on':''}" onclick="showTab(${i})">${t}</button>`).join('');
+  panels.innerHTML = TABS.map((t, i) => buildPanel(i)).join('');
+  bindLists();
+  loadSubs();
+}
+function showTab(i){
+  [...document.getElementById('tabBar').children].forEach((b, k) => b.classList.toggle('on', k === i));
+  [...document.getElementById('panels').children].forEach((p, k) => p.classList.toggle('on', k === i));
+  window.scrollTo({ top: 0 });
+}
+
+/* case 12: النصوص الثابتة والفورمات */
+/* ═══ أدوات بناء الحقول ═══ */
+function f(path, label, val, ta, ph){
+  const v = ta ? (val || '') : (val ?? '');
+  const inner = ta
+    ? `<textarea rows="3" data-p="${path}">${esc(v)}</textarea>`
+    : `<input type="text" data-p="${path}" value="${escAttr(v)}" placeholder="${ph||''}">`;
+  return `<div class="f"><label>${label}</label>${inner}</div>`;
+}
+function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function col(el, path){
+  const parts = path.split('.'); let o = cfg;
+  for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+  o[parts[parts.length-1]] = el.value;
+}
+
+/* ═══ بناء التبويبات ═══ */
+function buildPanel(i){
+  switch (i){
+    case 0: /* البنر */
+      return `<section class="panel on"><div class="card"><h3>📢 البنر المتحرك أعلى الموقع<small>كل تنبيه بيظهر متحرك (من اليسار لليمين) وبيتبدل تلقائيًا كل فترة — اتبي إمتى.</small></h3>
+        ${f('banner.interval','فترة التبديل (ثواني)',cfg.banner.interval)}
+        <div class="f"><label>الرسائل (كل سطر = تنبيه)</label>
+          <div id="bannerList"></div>
+          <button class="add" onclick="addBanner()">+ إضافة تنبيه</button></div></div></section>`;
+    case 1: /* النصوص */
+      const t = cfg.texts;
+      return `<section class="panel"><div class="card"><h3>🏠 الواجهة الرئيسية (Hero)</h3>
+        ${f('texts.heroChip','شريط صغير أعلى العنوان',t.heroChip)}
+        ${f('texts.heroTitle','العنوان الرئيسي (امسحي <br> لو مش حابة سطرين)',t.heroTitle)}
+        ${f('texts.heroSub','النص التعريفي',t.heroSub,1)}
+        ${f('texts.heroCta1','زر الحجز',t.heroCta1)}</div>
+      <div class="card"><h3>📝 عناوين الأقسام</h3>
+        ${f('texts.deptsTag','وسم الأقسام',t.deptsTag)}${f('texts.deptsTitle','عنوان الأقسام',t.deptsTitle)}${f('texts.deptsSub','وصف الأقسام',t.deptsSub,1)}
+        ${f('texts.programsSub','وصف البرامج',t.programsSub,1)}
+        ${f('texts.stepsTitle','عنوان نظام الشغل',t.stepsTitle)}${f('texts.stepsSub','وصف نظام الشغل',t.stepsSub,1)}
+        ${f('texts.whySub','وصف "ليه MindBloom"',t.whySub,1)}
+        ${f('texts.quizSub','وصف الكيويز',t.quizSub,1)}
+        ${f('texts.galTitle','عنوان الجاليري',t.galTitle)}${f('texts.galSub','وصف الجاليري',t.galSub,1)}
+        ${f('texts.teamTitle','عنوان الفريق',t.teamTitle)}${f('texts.teamSub','وصف الفريق',t.teamSub,1)}
+        ${f('texts.testiTitle','عنوان القصص',t.testiTitle)}${f('texts.testiSub','وصف القصص',t.testiSub,1)}
+        ${f('texts.faqTitle','عنوان الأسئلة',t.faqTitle)}${f('texts.faqSub','وصف الأسئلة',t.faqSub,1)}
+        ${f('texts.contactTitle','عنوان التواصل',t.contactTitle)}${f('texts.contactSub','وصف التواصل',t.contactSub,1)}
+        ${f('texts.footerAbout','سطر الفوتر',t.footerAbout)}
+        </div></section>`;
+    case 2: /* التواصل */
+      const c = cfg.contact;
+      return `<section class="panel"><div class="card"><h3>📍 العنوان والتليفونات والمواعيد<small>ده المكان الرسمي لكل بيانات التواصل (اتنقلت من الشريط العلوي)</small></h3>
+        ${f('contact.addr','العنوان',c.addr)}${f('contact.area','قرب معلومة (اختياري)',c.area)}
+        <div class="grid2">${f('contact.day','أيام العمل',c.day)}${f('contact.wa','واتساب (للعرض)',c.wa)}</div>
+        <div class="grid2">${f('contact.waLink','رابط واتساب (wa.me)',c.waLink)}${f('contact.tel','تليفون (للعرض)',c.tel)}</div>
+        <div class="grid2">${f('contact.telLink','رابط الاتصال (tel:)',c.telLink)}${f('contact.map','رابط خريطة جوجل',c.map)}</div>
+        <div class="grid2">${f('contact.open1','الفترة الصباحية',c.open1)}${f('contact.open2','الفترة المسائية',c.open2)}</div>
+        ${f('contact.sat','سطر يوم التقييم المجاني',c.sat)}
+        <h3 style="margin-top:20px">📲 روابط المنصات (اتروحي مخبية لو فاضية)</h3>
+        <div class="grid2">${f('contact.fb','فيسبوك',c.fb)}${f('contact.ig','إنستجرام',c.ig)}${f('contact.tt','تيك توك',c.tt)}</div>
+      </div></section>`;
+    case 3: /* الاقرب + الاقسام */
+      return `<section class="panel">
+        <div class="card"><h3>⚡ أزرار الاختصارات السريعة (4 أزرار في صف)</h3>
+          <div id="quickList"></div><button class="add" onclick="addItem('quick',{icon:'🎁',title:'',sub:'',cta:'',href:''})">+ إضافة زر</button></div>
+        <div class="card"><h3>🏢 الأقسام (تعديل/حذف/إضافة)</h3>
+          <div id="deptsList"></div>
+          <button class="add" onclick="addItem('depts',{cls:'d1',icon:'🏠',title:'',age:'',items:[]})">+ إضافة قسم</button></div></section>`;
+    case 4: /* البرامج + الخطوات */
+      return `<section class="panel">
+        <div class="card"><h3>📊 البرامج حسب المرحلة العمرية (جدول)</h3>
+          <div id="progList"></div><button class="add" onclick="addItem('programs',{stage:'',age:'',prog:'',goal:''})">+ إضافة مرحلة</button></div>
+        <div class="card"><h3>🤝 نظام الشغل (خطوات — تعديل/حذف/إضافة)</h3>
+          <div id="stepsList"></div>
+          <button class="add" onclick="addItem('steps',{title:'',sub:''})">+ إضافة خطوة</button></div></section>`;
+    case 5: /* ليه */
+      return `<section class="panel"><div class="card"><h3>🌟 ليه MindBloom (6 أسباب)</h3>
+        <div id="whyList"></div><button class="add" onclick="addItem('why',{icon:'✨',title:'',sub:''})">+ إضافة سبب</button></div></section>`;
+    case 6: /* الكيويز */
+      return `<section class="panel"><div class="card"><h3>💡 الكيويز التفاعلي (4 أسئلة)<small>كل سؤال له 4 اختيارات. (d) = مفتاح القسم اللي الاختيار بيوصل له</small></h3>
+        <div id="quizList"></div>
+        <button class="add" onclick="addQuiz()">+ إضافة سؤال</button></div>
+        <div class="card"><h3>🎯 نتائج الكيويز (8 نتائج — كل مفتاح = قسم)</h3>
+          <div id="resList"></div></div></section>`;
+    case 7: /* الجاليري */
+      return `<section class="panel"><div class="card"><h3>📸 صور المكان (الجاليري)<small>حطي مسار الصورة (مثل images/in-1-reception.jpg) — ولو صورة من الإنترنت حطي الرابط الكامل. الصور الحالية استرشادية: استبدليها بصوركم الحقيقية بنفس الأسماء.</small></h3>
+        <div id="galList"></div><button class="add" onclick="addItem('gallery',{src:'images/in-1-reception.jpg',cap:''})">+ إضافة صورة</button><�ا بصوركم الحقيقية بنفس الأسماء.</small></h3>
+        <div id="galList"></div><button class="add" onclick="addItem('gallery',{src:'images/in-1-reception.jpg',cap:''})">+ إضافة صورة</button></div></section>`;
+    case 8: /* الفريق */
+      return `<section class="panel"><div class="card"><h3>👥 الفريق الأكاديمي (كل اتنين في صف)<small>img = مسار صورة العضو (مثل images/team-1.jpg) — اتركيه فاضي وهيظهر حرف الاسم.</small></h3>
+        <div id="teamList"></div><button class="add" onclick="addItem('team',{name:'',role:'',quals:'',img:'',lic:''})">+ إضافة عضو</button></div></section>`;
+    case 9: /* قصص الأهل */
+      return `<section class="panel">
+        <div class="card"><h3>🥹 قصص الأهل (3 قصص)</h3><div id="testiList"></div><button class="add" onclick="addItem('testi',{stars:5,text:'',who:'',serv:''})">+ إضافة قصة</button></div></section>`;
+    case 10: /* faq */
+      return `<section class="panel"><div class="card"><h3>❓ الأسئلة الشائعة (إضافة/تعديل/حذف)</h3>
+        <div id="faqList"></div><button class="add" onclick="addItem('faq',{q:'',a:''})">+ إضافة سؤال</button></div></section>`;
+    case 11: /* الطلبات */
+      return `<section class="panel">
+        <div class="card"><h3>📥 الطلبات الواردة من الاستمارات<small>بيانات كل استمارة بتتحفظ هنا (على جهازك) + لو ربطتي جوجل شيت بتروح له تلقائيًا مع ملف الـ PDF.</small></h3>
+          <div class="subtable-wrap" id="subsTable"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+            <button class="add" style="width:auto;padding:10px 22px" onclick="exportCsv()">⬇️ تصدير CSV (إكسل)</button>
+            <button class="add" style="width:auto;padding:10px 22px" onclick="loadSubs()">🔄 تحديث</button>
+            <button class="add" style="width:auto;padding:10px 22px;border-color:var(--pink);color:var(--pink)" onclick="clearSubs()">🗑️ مسح السجل المحلي</button>
+          </div></div>
+        <div class="card"><h3>☁️ المزامنة مع جوجل شيت + درايف (خطة جوجل)<small>بعد ما تنشري السكربت (زر كوبي)، حطي الرابط اللي هيظهرلك في الخانة دي — ومن نفس اللحظة كل استمارة هتوصلك في شيت جوجل + ملف الـ PDF في درايفك.</small></h3>
+          ${f('syncUrl','رابط Web App (Apps Script)',cfg.syncUrl)}
+          <button class="add" style="width:auto;padding:10px 22px" onclick="saveAll();toast('اتحفظ رابط المزامنة ✅')">حفظ الرابط</button>
+          <div style="margin-top:18px"><label style="font-weight:700;color:var(--navy);font-size:.85rem">كود Apps Script — انسخيه وانشريه (الخطوات في دليل اللوحة 05):</label>
+          <pre class="code" id="gsCode"></pre>
+          <button class="add" style="width:auto;padding:10px 22px" onclick="copyGs()">📋 كوبي الكود</button></div>
+        </div>
+        <div class="card"><h3>💾 نسخة احتياطية من كل الإعدادات<small>صدّري نسخة JSON واحتفظي بيها (زي بيس بكب) — ولو بدّلتِ جهاز/متصفح، استورديها وترجع كل حاجة زي ما كانت.</small></h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="add" style="width:auto;padding:10px 22px" onclick="exportCfg()">⬇️ تصدير نسخة JSON</button>
+            <button class="add" style="width:auto;padding:10px 22px" onclick="importCfg()">⬆️ استيراد نسخة JSON</button>
+            <button class="add" style="width:auto;padding:10px 22px;border-color:var(--pink);color:var(--pink)" onclick="resetCfg()">↺ رجوع للإعدادات الافتراضية</button>
+          </div>
+          <input type="file" id="cfgFile" accept=".json" style="display:none" onchange="loadCfgFile(this)">
+        </div></section>`;
+    case 12: /* النصوص الثابتة والفورمات */
+      const s = cfg.site, fm = cfg.forms;
+      return `<section class="panel">
+        <div class="card"><h3>🖼️ كل أماكن الصور (بملف أو برابط مباشر)<small>كتبي اسم ملف داخل فولدر images/ (مثل images/in-1-reception.jpg) <b>أو رابط صورة كامل من الإنترنت</b> (مثل https://…) — في كل الأماكن دي.</small></h3>
+          ${f('site.logo','اللوجو (الموقع + الاستمارات + الـ PDF)',s.logo)}
+          ${f('site.heroImg','الصورة الكبيرة في الواجهة الرئيسية',s.heroImg)}
+          ${f('site.heroBadge1','الشارة الأولى جنب الصورة (اتحذف لو فضيت)',s.heroBadge1)}
+          ${f('site.heroBadge2','الشارة التانية جنب الصورة (اتحذف لو فضيت)',s.heroBadge2)}
+          <p style="font-size:.8rem;color:var(--muted);margin-top:10px">📌 صور الجاليري بتتعديل من تبويب "الجاليري" وصور الفريق من تبويب "الفريق" — وكمان برابط.</p></div>
+        <div class="card"><h3>🧭 القائمة والهوية</h3>
+          ${f('site.navTitle','اسم الموقع بالقائمة',s.navTitle)}
+          ${f('site.navSub','السطر الصغير تحت الاسم',s.navSub)}
+          ${f('site.navCta','زر الحجز بالقائمة',s.navCta)}
+          ${f('site.wa','رقم واتساب أساسي (11 رقم يبدء بـ 01)',s.wa)}
+          ${f('site.heroWaLink','رابط زر واتساب في الواجهة',s.heroWaLink)}
+          ${f('site.fabWaLink','رابط زر واتساب العائم',s.fabWaLink)}
+          ${f('site.mbarWaLink','رابط زر واتساب في شريط الموبايل',s.mbarWaLink)}</div>
+        <div class="card"><h3>🧩 عناصر ثابتة في الصفحة والفوتر</h3>
+          ${f('site.programsTitle','عنوان قسم البرامج',s.programsTitle)}
+          ${f('site.quizTitle','عنوان قسم الكيويز',s.quizTitle)}
+          ${f('site.offersCta','زر أسفل العروض',s.offersCta)}
+          ${f('site.galleryNote','سطر ملاحظة الجاليري',s.galleryNote,1)}
+          <div class="f"><label>شارات الثقة الأربع (سطر لكل شارة)</label>
+            <div id="trustList"></div>
+            <button class="add" onclick="addTrust()">+ إضافة شارة</button></div>
+          ${f('site.mbarWa','نص زر الموبايل (واتساب)',s.mbarWa)}
+          ${f('site.mbarEv','نص زر الموبايل (التقييم)',s.mbarEv)}
+          <h3 style="margin-top:18px">📄 سطور الفوتر</h3>
+          ${f('site.footerAddr','سطر العنوان',s.footerAddr)}
+          ${f('site.footerWa','سطر الواتساب',s.footerWa)}
+          ${f('site.footerTel','سطر التليفون',s.footerTel)}</div>
+        <div class="card"><h3>📲 روابط القائمة العلوية (إضافة/حذف)</h3>
+          <div id="navList"></div>
+          <button class="add" onclick="addNav()">+ إضافة رابط</button></div>
+        <div class="card"><h3>📝 عناوين الاستمارات الثلاثة</h3>
+          ${f('forms.evalTitle','عنوان استمارة التقييم',fm.evalTitle)}
+          ${f('forms.evalSub','وصف استمارة التقييم',fm.evalSub)}
+          ${f('forms.evalBookNote','ملاحظة الموعد في استمارة التقييم',fm.evalBookNote,1)}
+          ${f('forms.regTitle','عنوان استمارة التسجيل',fm.regTitle)}
+          ${f('forms.regSub','وصف استمارة التسجيل',fm.regSub)}
+          ${f('forms.surTitle','عنوان الاستبيان',fm.surTitle)}
+          ${f('forms.surSub','وصف الاستبيان',fm.surSub)}</div>
+      </section>`;
+  }
+  return '';
+}
+
+/* ═══ قوائم القابلة للتعديل ═══ */
+const ARR_NAMES = { quick:'زر اختصار', depts:'قسم', programs:'مرحلة', steps:'خطوة', why:'سبب تميّز', gallery:'صورة', team:'عضو فريق', testi:'قصة', offers:'عرض', faq:'سؤال' };
+function itemTpl(arr, idx, fields){
+  return `<div class="item" data-arr="${arr}" data-i="${idx}">
+    <div class="item-head"><span class="t">✎ ${ARR_NAMES[arr] || 'عنصر'} ${idx+1}</span><button class="del" onclick="delItem('${arr}',${idx})">✕ حذف</button></div>
+    ${fields.map(fd => { const key = fd[0], lbl = fd[1], ta = fd[2]; const val = key === 'items' ? (cfg[arr][idx][key] || []).join('\n') : cfg[arr][idx][key]; return f(`${arr}[${idx}].${key}`, lbl, val, ta); }).join('')}
+  </div>`;
+}
+function bindLists(){
+  const defs = {
+    banner: null,
+    quick: [['icon','أيقونة'],['title','العنوان'],['sub','السطر الصغير'],['cta','نص الزر'],['href','الرابط']],
+    depts: [['icon','أيقونة'],['title','اسم القسم'],['age','السن'],['items','الخدمات (سطر لكل خدمة)',1]],
+    programs: [['stage','المرحلة'],['age','العمر'],['prog','البرنامج'],['goal','الهدف']],
+    steps: [['title','العنوان'],['sub','الوصف']],
+    why: [['icon','أيقونة'],['title','العنوان'],['sub','الوصف']],
+    gallery: [['src','مصدر الصورة'],['cap','الوصف']],
+    team: [['name','الاسم'],['role','المسمى'],['quals','المؤهل والخبرة'],['img','صورة (مسار/رابط)'],['lic','شارة (اختياري)']],
+    testi: [['stars','نجوم (1-5)'],['text','القصة',1],['who','اسم الأم'],['serv','الخدمة']],
+    offers: [['icon','أيقونة'],['title','العنوان'],['sub','الوصف',1],['price','السعر/الشارة']],
+    faq: [['q','السؤال'],['a','الإجابة',1]]
+  };
+  for (const arr of Object.keys(defs)){
+    if (arr === 'banner') continue;
+    const box = document.getElementById(arr === 'programs' ? 'progList' : arr === 'steps' ? 'stepsList' : arr === 'gallery' ? 'galList' : arr === 'faq' ? 'faqList' : arr === 'testi' ? 'testiList' : arr === 'offers' ? 'offList' : arr + 'List');
+    if (!box) continue;
+    box.innerHTML = cfg[arr].map((it, i) => itemTpl(arr, i, defs[arr])).join('');
+  }
+  renderBannerList();
+  document.getElementById('quizList').innerHTML = cfg.quiz.questions.map((q, i) =>
+    `<div class="item" data-arr="quizq" data-i="${i}"><div class="item-head"><span class="t">✎ سؤال الكيويز ${i+1}</span><button class="del" onclick="delQuiz(${i})">✕ حذف</button></div>
+      ${f(`quiz.questions[${i}].q`,`نص السؤال ${i+1}`,q.q)}
+      ${q.opts.map((o, j) => `<div class="grid2">${f(`quiz.questions[${i}].opts[${j}].t`,`اختيار ${j+1}`,o.t)}${f(`quiz.questions[${i}].opts[${j}].d`,`(d) القسم اللي يوصل له`,o.d)}</div>`).join('')}
+    </div>`).join('');
+
+  /* نتائج الكيويز (8) */
+  const RK = ['nursery','kg','school','center','special','speech','behavior','learning'];
+  const resBox = document.getElementById('resList');
+  if (resBox) resBox.innerHTML = RK.map(k =>
+    `<div class="item"><div class="item-head"><span class="t">✎ نتيجة: ${k}</span></div>
+      <div class="grid2">${f(`quiz.results.${k}.big`,'الأيقونة',cfg.quiz.results[k].big)}${f(`quiz.results.${k}.t`,'العنوان',cfg.quiz.results[k].t)}</div>
+      ${f(`quiz.results.${k}.p`,'نص النتيجة',cfg.quiz.results[k].p,1)}</div>`).join('');
+
+  /* شارات الثقة */
+  renderTrustList();
+
+  /* روابط القائمة */
+  const navBox = document.getElementById('navList');
+  if (navBox) navBox.innerHTML = cfg.site.navItems.map((it, i) =>
+    `<div class="item" data-arr="navItems" data-i="${i}"><div class="item-head"><span class="t">✎ رابط القائمة ${i+1}</span><button class="del" onclick="delNav(${i})">✕ حذف</button></div>
+      <div class="grid2">${f(`site.navItems[${i}].l`, 'الوسم (اللي هيظهر)', it.l)}${f(`site.navItems[${i}].h`, 'القسم اللي هيوديك له (بدون #)', it.h)}</div></div>`).join('');
+}
+function renderTrustList(){
+  const box = document.getElementById('trustList');
+  if (!box) return;
+  box.innerHTML = cfg.site.trust.map((m, i) =>
+    `<div class="item" data-arr="trust" data-i="${i}"><div class="item-head"><span class="t">✎ شارة ${i+1}</span><button class="del" onclick="delTrust(${i})">✕ حذف</button></div>${f(`site.trust[${i}]`,`نص الشارة ${i+1}`,m)}</div>`).join('');
+}
+function addNav(){ cfg.site.navItems.push({ l: '', h: 'home' }); showTabCurrent(); toast('اتضاف — عدّليه ودوسي حفظ'); }
+function delNav(i){ cfg.site.navItems.splice(i, 1); showTabCurrent(); toast('اتحذف — دوسي حفظ'); }
+function addTrust(){ cfg.site.trust.push(''); renderTrustList(); }
+function delTrust(i){ cfg.site.trust.splice(i, 1); renderTrustList(); }
+function renderBannerList(){
+  document.getElementById('bannerList').innerHTML = cfg.banner.messages.map((m, i) =>
+    `<div class="item" data-arr="banner" data-i="${i}"><div class="item-head"><span class="t">✎ تنبيه ${i+1}</span><button class="del" onclick="delBanner(${i})">✕ حذف</button></div>${f(`banner.messages[${i}]`,`نص التنبيه ${i+1}`,m,1)}</div>`).join('');
+}
+function readAllInputs(){
+  document.querySelectorAll('[data-p]').forEach(el => {
+    const p = el.dataset.p;
+    const m0 = p.match(/^depts\[(\d+)\]\.items$/);
+    if (m0){ cfg.depts[+m0[1]].items = el.value.split('\n').map(s => s.trim()).filter(Boolean); return; }
+    if (p.includes('[')){
+      const m = p.match(/^([^.]+)\[(\d+)\]\.(.*)$/);
+      if (m && !p.startsWith('site.')){ cfg[m[1]][+m[2]][m[3]] = el.value; return; }
+      const m2 = p.match(/^quiz\.questions\[(\d+)\]\.opts\[(\d+)\]\.(\w)$/);
+      if (m2){ cfg.quiz.questions[+m2[1]].opts[+m2[2]][m2[3]] = el.value; return; }
+      const m3 = p.match(/^quiz\.questions\[(\d+)\]\.q$/);
+      if (m3){ cfg.quiz.questions[+m3[1]].q = el.value; return; }
+      const m4 = p.match(/^banner\.messages\[(\d+)\]$/);
+      if (m4){ cfg.banner.messages[+m4[1]] = el.value; return; }
+      const m5 = p.match(/^site\.navItems\[(\d+)\]\.(\w)$/);
+      if (m5){ cfg.site.navItems[+m5[1]][m5[2]] = el.value; return; }
+      const m6 = p.match(/^site\.trust\[(\d+)\]$/);
+      if (m6){ cfg.site.trust[+m6[1]] = el.value; return; }
+    }
+    col(el, p);
+  });
+}
+function addItem(arr, obj){ cfg[arr].push(obj); showTabCurrent(); toast('اتضافت — عدّلي بياناتها ودوسي حفظ'); }
+function delItem(arr, i){ cfg[arr].splice(i, 1); showTabCurrent(); toast('اتحذفت — دوسي حفظ'); }
+function delBanner(i){ cfg.banner.messages.splice(i, 1); renderBannerList(); }
+function addBanner(){ cfg.banner.messages.push(''); renderBannerList(); }
+function delQuiz(i){ cfg.quiz.questions.splice(i, 1); bindLists(); }
+function addQuiz(){ cfg.quiz.questions.push({ q: '؟', opts: [ {t:'',d:'nursery'},{t:'',d:'kg'},{t:'',d:'school'},{t:'',d:'center'} ] }); bindLists(); }
+function showTabCurrent(){
+  const on = [...document.querySelectorAll('.panel')].find(p => p.classList.contains('on'));
+  const i = [...document.getElementById('panels').children].indexOf(on);
+  const fresh = buildPanel(i);
+  on.outerHTML = fresh;
+  bindLists();
+}
+
+/* ═══ الحفظ ═══ */
+function saveAll(){
+  readAllInputs();
+  MB.set(cfg);
+  toast('✅ اتحفظ كل حاجة — عدّلاتك هتظهر فورًا في الموقع (نفس المتصفح). صدّري نسخة JSON احتياط!');
+}
+
+/* ═══ الطلبات ═══ */
+function loadSubs(){
+  const subs = MB.getSubs();
+  const box = document.getElementById('subsTable');
+  if (!subs.length){ box.innerHTML = '<p style="color:var(--muted);font-size:.9rem;padding:14px 0">لسه مفيش طلبات — أول ما أي أم ترفع استمارة هتلاقيها هنا 🌸</p>'; return; }
+  box.innerHTML = `<table class="subs"><tr><th>التاريخ</th><th>النوع</th><th>الاسم</th><th>الهاتف</th><th>المصدر</th><th>التفاصيل</th></tr>
+    ${subs.map(s => `<tr><td>${new Date(s.date).toLocaleDateString('ar-EG')}</td>
+      <td><span class="pill">${s.type}</span></td><td>${s.name || '—'}</td><td>${s.phone || '—'}</td>
+      <td>${s.source || '—'}</td><td style="font-size:.78rem;color:var(--muted)">${JSON.stringify(s.data || {})}</td></tr>`).join('')}</table>`;
+}
+function exportCsv(){
+  const subs = MB.getSubs();
+  if (!subs.length){ alert('مفيش طلبات للتصدير'); return; }
+  const head = ['التاريخ','النوع','الاسم','الهاتف','المصدر','التفاصيل'];
+  const rows = subs.map(s => [new Date(s.date).toLocaleString('ar-EG'), s.type, s.name || '', s.phone || '', s.source || '', JSON.stringify(s.data || {})]);
+  const csv = '\uFEFF' + [head, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'MindBloom-الطلبات.csv';
+  a.click();
+}
+function clearSubs(){ if (confirm('متأكدة عايزة تمسحي السجل المحلي؟ (ده مش بيمسح نسخة جوجل شيت)')){ localStorage.removeItem(MB.SUBKEY); loadSubs(); } }
+
+/* ═══ كود Apps Script ═══ */
+const GS_CODE = `// MindBloom — احفظ الطلبات + ملفات الـ PDF في جوجل
+const SHEET_NAME = 'MindBloom_Requests';
+const FOLDER_NAME = 'MindBloom_PDFs';
+
+function folder(){
+  const it = DriveApp.getFoldersByName(FOLDER_NAME);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
+}
+function doPost(e){
+  const lock = LockService.getScriptLock(); lock.waitLock(10000);
+  try {
+    const d = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
+    if (sh.getLastRow() === 0)
+      sh.appendRow(['الوقت','النوع','الاسم','الهاتف','المصدر','التفاصيل','ملف PDF']);
+    let pdfUrl = '';
+    if (d.pdfBase64){
+      const file = folder().createFile(
+        Utilities.newBlob(Utilities.base64Decode(d.pdfBase64), 'application/pdf', d.pdfName || 'submission.pdf'));
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      pdfUrl = file.getUrl();
+    }
+    sh.appendRow([new Date(), d.type, d.name, d.phone, d.source || '', JSON.stringify(d.data || {}).slice(0, 30000), pdfUrl]);
+    return out({ ok: true });
+  } finally { lock.releaseLock(); }
+}
+function doGet(){
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) return out({ ok: true, rows: [] });
+  const v = sh.getDataRange().getValues();
+  return out({ ok: true, rows: v.slice(1).map(r => ({
+    time: r[0], type: r[1], name: r[2], phone: r[3], source: r[4], data: r[5], pdf: r[6]
+  })) });
+}
+function out(o){
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}`;
+function copyGs(){
+  const el = document.getElementById('gsCode');
+  el.textContent = GS_CODE;
+  navigator.clipboard?.writeText(GS_CODE);
+  toast('📋 اتكوبي الكود — الصقيه في Apps Script');
+}
+
+/* ═══ نسخ احتياطي ═══ */
+function exportCfg(){
+  readAllInputs(); MB.set(cfg);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([MB.exportJSON()], { type: 'application/json' }));
+  a.download = 'MindBloom-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  toast('⬇️ اتنزّلت النسخة الاحتياطية');
+}
+function importCfg(){ document.getElementById('cfgFile').click(); }
+function loadCfgFile(inp){
+  const file = inp.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      MB.importJSON(r.result);
+      cfg = MB.get();
+      location.reload();
+    } catch (e){ alert('الملف مش صالح — اتأكدي إنه نسخة JSON من نفس اللوحة'); }
+  };
+  r.readAsText(file);
+}
+function resetCfg(){
+  if (confirm('متأكدة؟ هترجع كل الإعدادات زي الافتراضي (النسخة الاحتياطية هتبقى هي الخلاص لو مسيتها)')){
+    MB.reset(); location.reload();
+  }
+}
+
+/* فتح اللوحة تلقائيًا لو دخلتِ بالكلمة قبل كده (بعد ما كل التعريفات اتجهزت) */
+if (sessionStorage.getItem('mb_admin_ok') === '1') showDash();
+</script>
+</body>
+</html>

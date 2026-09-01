@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل طفل | MindBloom Academy</title>
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="config-v2.js"></script>
+<style>
+  :root{--navy:#17356b;--navy-d:#0f2547;--turq:#2ec4b6;--turq-d:#1fa396;--amber:#ffb703;--pink:#ef476f;--green:#57a639;--bg:#f7fafd;--ink:#1c2b3a;--muted:#5d7285}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Segoe UI","Cairo",Tahoma,Arial,sans-serif;background:linear-gradient(160deg,#0f2547,#1d4b8f);color:var(--ink);line-height:1.7;min-height:100vh;padding:28px 14px}
+  .card{max-width:680px;margin:0 auto;background:#fff;border-radius:24px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden}
+  .head{background:linear-gradient(135deg,var(--navy),var(--navy-d));color:#fff;padding:26px 28px;text-align:center}
+  .head .logo{width:74px;height:74px;border-radius:50%;object-fit:cover;border:3px solid var(--amber);margin:0 auto 12px;display:block}
+  .head h1{font-size:1.3rem}
+  .head p{color:#cfe0f5;font-size:.88rem}
+  .steps{display:flex;background:#eef5fb}
+  .steps div{flex:1;text-align:center;padding:12px 5px;font-size:.76rem;font-weight:700;color:var(--muted);border-bottom:3px solid transparent}
+  .steps div.on{color:var(--navy);border-bottom-color:var(--turq);background:#fff}
+  .body{padding:26px 28px}
+  .fld{margin-bottom:15px}
+  .fld label{display:block;font-weight:700;color:var(--navy);font-size:.9rem;margin-bottom:6px}
+  .fld label .req{color:var(--pink)}
+  .fld input,.fld select,.fld textarea{width:100%;padding:12px 14px;border:2px solid #e3ecf5;border-radius:12px;font-family:inherit;font-size:.95rem;background:#fbfdfe;transition:.2s}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--turq);background:#fff}
+  .fld.err > input,.fld.err > textarea{border-color:var(--pink)!important}
+  .phwrap{display:flex;align-items:stretch;border:2px solid #e3ecf5;border-radius:12px;background:#fbfdfe;overflow:hidden;transition:.2s}
+  .phwrap:focus-within{border-color:var(--turq);background:#fff}
+  .phwrap input{flex:1;border:none;background:transparent;padding:12px 14px;font-family:inherit;font-size:.95rem;min-width:0}
+  .phwrap input:focus{outline:none}
+  .ph{display:flex;align-items:center;background:#eef5fb;color:var(--navy);font-weight:800;padding:0 14px;border-inline-start:2px solid #e3ecf5;font-size:.95rem}
+  .phwrap.err{border-color:var(--pink)!important}
+  .ferr{display:none;color:var(--pink);font-size:.78rem;margin-top:5px;font-weight:700}
+  .ferr.on{display:block}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:2px solid #e3ecf5;border-radius:999px;padding:8px 15px;font-size:.86rem;font-weight:600;cursor:pointer;transition:.2s;user-select:none}
+  .chip:hover{border-color:var(--turq)}
+  .chip.on{background:var(--turq);border-color:var(--turq);color:#fff}
+  .box{background:#f4f8fc;border-radius:14px;padding:14px 16px;margin-bottom:14px}
+  .btn{width:100%;background:var(--turq);color:#fff;font-weight:800;font-size:1rem;padding:15px;border:none;border-radius:14px;cursor:pointer;font-family:inherit;transition:.2s}
+  .btn:hover{background:var(--turq-d)}
+  .btn.wa{background:#25d366}
+  .btn.wa:hover{background:#1eb958}
+  .back{background:none;border:none;color:var(--muted);font-weight:700;cursor:pointer;margin-bottom:12px;font-family:inherit;font-size:.9rem}
+  .note{background:rgba(255,183,3,.12);border:1.5px dashed var(--amber);border-radius:12px;padding:12px 14px;font-size:.83rem;margin-bottom:18px}
+  .agree{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;padding:10px 0;border-bottom:1px dashed #edf2f8}
+  .agree input{width:20px;height:20px;accent-color:var(--turq);margin-top:3px;flex-shrink:0}
+  .agree small{display:block;color:var(--muted);font-size:.75rem;margin-top:2px}
+  /* تنبيه التوقيع المتحرك (شاشة فقط — لا يطبع في الـ PDF) */
+  .sig-alert{background:linear-gradient(90deg,#fff1f2,#fff8e8);border:2px solid #f43f5e;border-radius:14px;padding:13px 16px;font-weight:800;color:#9f1239;font-size:.9rem;text-align:center;margin-bottom:18px;animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.35);transform:scale(1)}50%{box-shadow:0 0 0 10px rgba(244,63,94,0);transform:scale(1.012)}}
+  .prev{background:#f4f8fc;border-radius:12px;padding:14px;font-size:.8rem;color:var(--muted);margin-bottom:16px;white-space:pre-wrap;max-height:200px;overflow:auto;display:none}
+  .done{display:none;text-align:center;padding:10px 0}
+  .done .big{font-size:3.4rem}
+  .done h2{color:var(--navy);margin:10px 0}
+  .done p{color:var(--muted);font-size:.9rem;margin-bottom:12px}
+  .done .btn{margin-bottom:10px}
+  .foot{text-align:center;padding:16px 28px 22px;color:var(--muted);font-size:.8rem}
+  .foot a{color:var(--turq-d);font-weight:700}
+  /* مستند الـ PDF */
+  #pdfDoc{display:none;position:fixed;top:0;left:-12000px;width:794px;background:#fff;font-family:"Segoe UI","Cairo",Tahoma,Arial,sans-serif;direction:rtl;color:#1c2b3a;padding:36px 40px}
+  #pdfDoc .ph-head{display:flex;align-items:center;gap:16px;border-bottom:4px solid #ffb703;padding-bottom:16px;margin-bottom:18px}
+  #pdfDoc .ph-head img{width:80px;height:80px;border-radius:50%;border:2px solid #ffb703}
+  #pdfDoc .ph-head b{color:#17356b;font-size:21px;display:block}
+  #pdfDoc .ph-head small{color:#5d7285;font-size:12.5px}
+  #pdfDoc h2{color:#17356b;font-size:18px;margin-bottom:12px}
+  #pdfDoc .meta{background:#eef5fb;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#17356b;font-weight:700;margin-bottom:14px}
+  #pdfDoc table{width:100%;border-collapse:collapse;margin-bottom:18px}
+  #pdfDoc td{border:1px solid #d7e3f0;padding:8px 11px;font-size:12.5px;vertical-align:top}
+  #pdfDoc td.k{background:#f4f8fc;font-weight:800;color:#17356b;width:32%}
+  #pdfDoc .sigs{display:flex;gap:22px;margin-top:22px}
+  #pdfDoc .sigbox{flex:1;border:2px solid #17356b;border-radius:12px;height:100px;position:relative}
+  #pdfDoc .sigbox span{position:absolute;top:8px;inset-inline-start:13px;font-size:12.5px;font-weight:800;color:#17356b}
+  #pdfDoc .sig-note{background:rgba(255,183,3,.16);border:1.5px dashed #ffb703;border-radius:10px;padding:11px 13px;font-size:12.5px;font-weight:700;color:#17356b;margin-top:18px}
+  #pdfDoc .ph-foot{margin-top:18px;font-size:11.5px;color:#5d7285;border-top:1px solid #e3ecf5;padding-top:10px;text-align:center}
+  @media(max-width:520px){.row{grid-template-columns:1fr}.body{padding:20px 18px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <img class="logo" id="formLogo" src="images/logo-final.png" alt="MindBloom">
+    <h1 id="formTitle">📝 نموذج التسجيل وفتح ملف طفل</h1>
+    <p id="formSub">٥ دقايق… وطفلك عنده ملف كامل عندنا — البيانات سرية وتُحفظ في ملف الطفل</p>
+  </div>
+  <div class="steps"><div class="on" id="s1">١ · بيانات الطفل</div><div id="s2">٢ · الخدمة</div><div id="s3">٣ · ولي الأمر</div><div id="s4">٤ · الموافقات</div></div>
+
+  <div class="body">
+    <!-- ═══ ١: الطفل ═══ -->
+    <div class="step" id="p1">
+      <div class="note">💛 المعلومات الطبية بتساعدنا نضمن لطفلك يومًا آمنًا — وسريتها مضمونة.</div>
+      <div class="row">
+        <div class="fld"><label>اسم الطفل (ثلاثي) <span class="req">*</span></label><input id="cName" placeholder="الاسم بالكامل"></div>
+        <div class="fld"><label>تاريخ الميلاد <span class="req">*</span></label><input id="cDOB" type="date"></div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>العمر (بالسنوات والشهور) <span class="req">*</span></label><input id="cAge" placeholder="مثال: سنتين و٦ شهور"></div>
+        <div class="fld"><label>النوع <span class="req">*</span></label>
+          <div class="chips" data-k="cGender"><span class="chip" data-v="ذكر">ذكر</span><span class="chip" data-v="أنثى">أنثى</span></div>
+          <div class="ferr" id="cGenderErr">اختاري نوع الطفل</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>عدد الإخوة</label><input id="cSib" placeholder="مثال: ٢"></div>
+        <div class="fld"><label>ترتيبه بينهم</label><input id="cOrder" placeholder="مثال: البكر"></div>
+      </div>
+      <div class="fld"><label>العنوان <span class="req">*</span></label><input id="cAddr" placeholder="الحي — الشارع"></div>
+      <div class="box">
+        <b style="color:var(--navy);font-size:.88rem">🩺 البيانات الصحية</b>
+        <div class="fld" style="margin-top:10px"><label>حساسية (طعام/دواء/أخرى)؟</label><input id="cAllergy" placeholder="لا توجد / تفاصيل…"></div>
+        <div class="fld"><label>أمراض أو أدوية منتظمة؟</label><input id="cMed" placeholder="لا توجد / تفاصيل…"></div>
+        <div class="fld"><label>هل التطعيمات الأساسية مكتملة؟</label>
+          <div class="chips" data-k="cVax"><span class="chip" data-v="مكتملة">مكتملة ✅</span><span class="chip" data-v="غير مكتملة">غير مكتملة</span><span class="chip" data-v="محتاجة مراجعة">محتاجة مراجعة</span></div>
+        </div>
+      </div>
+      <button class="btn" onclick="go(2)">التالي ←</button>
+    </div>
+
+    <!-- ═══ ٢: الخدمة ═══ -->
+    <div class="step" id="p2" style="display:none">
+      <button class="back" onclick="go(1)">→ رجوع</button>
+      <div class="box">
+        <b style="color:var(--navy);font-size:.88rem">🎯 الخدمات المطلوبة (اختاري أكتر من واحدة)</b>
+        <div class="fld" style="margin-top:10px">
+          <div class="chips" data-k="cService" data-multi="1">
+            <span class="chip" data-v="حضانة — دوام كامل">👶 حضانة (كامل)</span>
+            <span class="chip" data-v="حضانة — نصف دوام">👶 حضانة (نص دوام)</span>
+            <span class="chip" data-v="بيبي زون">🍼 بيبي زون</span>
+            <span class="chip" data-v="تأسيس أكاديمي (KG)">📚 تأسيس أكاديمي</span>
+            <span class="chip" data-v="تأهيل لإنترفيوهات المدارس">🎓 تأهيل إنترفيوهات</span>
+            <span class="chip" data-v="جلسات تخاطب">🗣️ جلسات تخاطب</span>
+            <span class="chip" data-v="جلسات تعديل سلوك">🧠 تعديل سلوك</span>
+            <span class="chip" data-v="جلسات صعوبات تعلم">✏️ صعوبات تعلم</span>
+            <span class="chip" data-v="برامج ذوي الاحتياجات الخاصة">💙 ذوي الهمم</span>
+            <span class="chip" data-v="تحفيظ قرآن">📿 تحفيظ قرآن</span>
+            <span class="chip" data-v="كورسات (لغات/ماث/فنون/روبوتكس)">🎨 كورسات</span>
+          </div>
+          <div class="ferr" id="cServiceErr">اختاري خدمة واحدة على الأقل</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>هل محتاجة مواصلات؟</label>
+          <div class="chips" data-k="cTrans"><span class="chip" data-v="نعم">نعم 🚌</span><span class="chip" data-v="لا">لا</span></div>
+        </div>
+        <div class="fld"><label>الفترة المفضلة</label>
+          <div class="chips" data-k="cPeriod"><span class="chip" data-v="صباح">صباح 🌅</span><span class="chip" data-v="مساء">مساء 🌆</span></div>
+        </div>
+      </div>
+      <div class="box">
+        <b style="color:var(--navy);font-size:.88rem">🔐 استلام الطفل — من هو المسموح له؟</b>
+        <p style="font-size:.78rem;color:var(--muted);margin:6px 0">الطفل بيتسلَّم للأسماء المكتوبة فقط:</p>
+        <div class="row">
+          <div class="fld"><label>اسم ١ <span class="req">*</span></label><input id="pk1" placeholder="الأم"></div>
+          <div class="fld"><label>موبايل ١ <span class="req">*</span></label>
+            <div class="phwrap" id="pk1pWrap"><input id="pk1p" inputmode="tel" placeholder="01xxxxxxxxx" oninput="fmtEg(this)"><span class="ph">+20</span></div>
+            <div class="ferr" id="pk1pErr">رقم مصري لازم يكون ١١ رقم ويبدأ بـ 01</div>
+          </div>
+          <div class="fld"><label>اسم ٢</label><input id="pk2" placeholder="الأب (اختياري)"></div>
+          <div class="fld"><label>موبايل ٢</label>
+            <div class="phwrap" id="pk2pWrap"><input id="pk2p" inputmode="tel" placeholder="اختياري" oninput="fmtEg(this)"><span class="ph">+20</span></div>
+            <div class="ferr" id="pk2pErr">رقم غير صحيح (لو هتكتبيه)</div>
+          </div>
+          <div class="fld"><label>اسم ٣ (اختياري)</label><input id="pk3" placeholder="…"></div>
+          <div class="fld"><label>موبايل ٣</label>
+            <div class="phwrap" id="pk3pWrap"><input id="pk3p" inputmode="tel" placeholder="…" oninput="fmtEg(this)"><span class="ph">+20</span></div>
+            <div class="ferr" id="pk3pErr">رقم غير صحيح (لو هتكتبيه)</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn" onclick="go(3)">التالي ←</button>
+    </div>
+
+    <!-- ═══ ٣: ولي الأمر ═══ -->
+    <div class="step" id="p3" style="display:none">
+      <button class="back" onclick="go(2)">→ رجوع</button>
+      <div class="row">
+        <div class="fld"><label>اسم الأب <span class="req">*</span></label><input id="fName" placeholder="الاسم بالكامل"></div>
+        <div class="fld"><label>موبايل الأب <span class="req">*</span></label>
+          <div class="phwrap" id="fPhoneWrap"><input id="fPhone" inputmode="tel" placeholder="01xxxxxxxxx" oninput="fmtEg(this)"><span class="ph">+20</span></div>
+          <div class="ferr" id="fPhoneErr">رقم مصري لازم يكون ١١ رقم ويبدأ بـ 01</div>
+        </div>
+        <div class="fld"><label>اسم الأم <span class="req">*</span></label><input id="mName" placeholder="الاسم بالكامل"></div>
+        <div class="fld"><label>موبايل الأم (واتساب أساسي) <span class="req">*</span></label>
+          <div class="phwrap" id="mPhoneWrap"><input id="mPhone" inputmode="tel" placeholder="01xxxxxxxxx" oninput="fmtEg(this)"><span class="ph">+20</span></div>
+          <div class="ferr" id="mPhoneErr">رقم مصري لازم يكون ١١ رقم ويبدأ بـ 01</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="fld"><label>وسيلة التواصل المفضلة</label>
+          <div class="chips" data-k="pPref"><span class="chip" data-v="واتساب">💬 واتساب</span><span class="chip" data-v="مكالمة">📞 مكالمة</span><span class="chip" data-v="رسائل نصية">✉️ رسائل</span></div>
+        </div>
+        <div class="fld"><label>عرفتي بإحنا من فين؟</label>
+          <select id="pSource"><option value="">— اختاري —</option><option>فيسبوك</option><option>إنستجرام</option><option>تيك توك</option><option>خرائط جوجل</option><option>ترشيح من أسرة</option><option>لافتة / إعلان مطبوع</option><option>سكان المنطقة</option></select>
+        </div>
+      </div>
+      <div class="fld"><label>شخص طوارئ (غير الوالدين) + موبايله</label><input id="pEmerg" placeholder="مثال: العم — 01xxxxxxxxx"></div>
+      <div class="fld"><label>ملاحظات يهمنا نعرفها عن طفلك (طباعه/مخاوفه/ألعابه المفضلة/أي حاجة)</label><textarea id="pNotes" rows="3" placeholder="كل معلومة بتساعدنا نحبّه ونفهمه أسرع 💛"></textarea></div>
+      <button class="btn" onclick="go(4)">التالي ←</button>
+    </div>
+
+    <!-- ═══ ٤: الموافقات + إرسال ═══ -->
+    <div class="step" id="p4" style="display:none">
+      <button class="back" onclick="go(3)">→ رجوع</button>
+      <div class="sig-alert">⚠️ سيتم التوقيع على نسخة من استمارة التسجيل أثناء الحضور بالأكاديمية</div>
+      <div class="agree"><input type="checkbox" id="ag1"><span>أقرّ بصحة البيانات، وأتعهد بإخطار الإدارة فور أي تغيير (هاتف/عنوان/حالة صحية).</span></div>
+      <div class="agree"><input type="checkbox" id="ag2"><span>اطلعتُ على اللائحة الداخلية (مواعيد الحضور والانصراف — قواعد السداد — سياسة الغياب) وأوافق عليها.
+        <small>📎 ملاحظة: الاطلاع على اللائحة الداخلية يتم أثناء التسجيل، والتوقيع النهائي عليها يتم عند الحضور.</small></span></div>
+      <div class="agree" style="border-bottom:none"><input type="checkbox" id="ag3"><span>أوافق على تطبيق خطة الطوارئ الطبية المعتمدة عند الحاجة، مع إخطاري فورًا.</span></div>
+      <div class="box" style="margin-top:14px">
+        <b style="color:var(--navy);font-size:.88rem">📸 التصوير للأغراض التعليمية/التسويقية</b>
+        <div class="fld" style="margin-top:8px;margin-bottom:0">
+          <div class="chips" data-k="cPhoto"><span class="chip" data-v="أوافق">أوافق ✅</span><span class="chip" data-v="أوافق بدون ظهور الوجه">أوافق بدون ظهور الوجه</span><span class="chip" data-v="لا أوافق">لا أوافق</span></div>
+          <div class="ferr" id="cPhotoErr">اختاري موقفك من التصوير</div>
+        </div>
+      </div>
+      <div class="prev" id="prevBox"></div>
+      <button class="btn wa" onclick="send()">💬 تحميل الـ PDF + الإرسال على واتساب</button>
+      <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:10px">هيتنزّل ملف PDF بالبيانات (التوقيع عليه وقت الحضور) وبيتفتح واتساب برسالة جاهزة — من فضلك أرفقي ملف الـ PDF في الرسالة 📎</p>
+    </div>
+
+    <!-- اكتمل -->
+    <div class="done" id="done">
+      <div class="big">🌸</div>
+      <h2>تم تجهيز ملف التسجيل!</h2>
+      <p>اتنزّل ملف PDF بالبيانات — <b>التوقيع النهائي يتم أثناء الحضور</b>.<br>
+      لو مفتحش واتساب تلقائيًا: دوسي الزرار وأرفقي ملف الـ PDF. وهنرد عليكم في أقرب وقت لتأكيد موعد الزيارة.</p>
+      <button class="btn wa" id="waBtn">💬 افتحي واتساب</button>
+      <button class="btn" id="pdfBtn2">⬇️ إعادة تحميل الـ PDF</button>
+      <button class="btn" style="background:var(--navy)" onclick="copyMsg()">📋 كوبي الرسالة</button>
+      <p class="foot"><a href="index.html">← الرجوع للموقع</a></p>
+    </div>
+  </div>
+  <div class="foot">📍 ١٤ شارع الأحقاف — الإبراهيمية — الإسكندرية · 📱 ٠١٠٢٧٠٥٢٣٩٧</div>
+</div>
+
+<!-- مستند الـ PDF -->
+<div id="pdfDoc">
+  <div class="ph-head">
+    <img id="pdfLogo" src="images/logo-final.png" alt="">
+    <div><b>MindBloom Academy — مايند بلوم أكاديمي</b><small>نرعى طفلك اليوم ونبني شخصيته للمستقبل</small><br><small>📍 ١٤ شارع الأحقاف — الإبراهيمية — الإسكندرية · 📱 ٠١٠٢٧٠٥٢٣٩٧</small></div>
+  </div>
+  <h2>نموذج التسجيل وفتح ملف طفل</h2>
+  <div class="meta" id="pdfDate"></div>
+  <table id="pdfFields"></table>
+  <div class="sigs">
+    <div class="sigbox"><span>توقيع ولي الأمر</span></div>
+    <div class="sigbox"><span>توقيع الأكاديمية</span></div>
+  </div>
+  <div class="sig-note" id="pdfSigNote"></div>
+  <div class="ph-foot">MindBloom Academy — نموذج تسجيل REG v2.0 · وثيقة سرية تُحفظ في ملف الطفل</div>
+</div>
+
+<script>
+(function(){
+  const F = (MB.get() || {}).forms || {};
+  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
+  const L = (MB.get() || {}).site || {};
+  const setSrc = (id, t) => { const el = document.getElementById(id); if (el && t) el.src = t; };
+  setSrc('formLogo', L.logo); setSrc('pdfLogo', L.logo);
+  set('formTitle', F.regTitle); set('formSub', F.regSub);
+})();
+const WA = (MB.get() && MB.get().site && MB.get().site.wa) || "201027052397";
+let picked = {};
+
+document.querySelectorAll('.chips').forEach(g => {
+  const multi = g.dataset.multi === '1';
+  g.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    if (!multi){ g.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); c.classList.add('on'); picked[g.dataset.k] = c.dataset.v; }
+    else { c.classList.toggle('on'); picked[g.dataset.k] = [...g.querySelectorAll('.chip.on')].map(x => x.dataset.v).join('، '); }
+    const errId = g.dataset.k + 'Err';
+    if (document.getElementById(errId)) document.getElementById(errId).classList.remove('on');
+  }));
+});
+
+function fmtEg(el){
+  let v = el.value.replace(/\D/g, '');
+  if (v.startsWith('20') && v.length > 10) v = v.slice(2);
+  if (v && !v.startsWith('0') && v.length >= 10) v = '0' + v;
+  el.value = v.slice(0, 11);
+}
+function egOk(v){ return /^01[0-9]{9}$/.test(v); }
+function egIntl(v){ return '+20' + v.slice(1); }
+function v(id){ return document.getElementById(id).value.trim(); }
+function err(on, id){ const el = document.getElementById(id); if (el) el.classList.toggle('on', on); return !on; }
+
+function checkPhone(id, errId, required){
+  const val = v(id);
+  if (!val) return !required;
+  const ok = egOk(val);
+  if (!ok) err(true, errId); else err(false, errId);
+  document.getElementById(id + 'Wrap').classList.toggle('err', !ok);
+  return ok;
+}
+
+function go(n){
+  let ok = true;
+  if (n === 2){
+    ['cName','cDOB','cAge','cAddr'].forEach(id => {
+      const el = document.getElementById(id);
+      const good = !!el.value.trim();
+      el.classList.toggle('err', !good);
+      ok = ok && good;
+    });
+    if (!picked.cGender){ err(true, 'cGenderErr'); ok = false; }
+  }
+  if (n === 3){
+    if (!v('pk1')){ document.getElementById('pk1').classList.add('err'); ok = false; } else document.getElementById('pk1').classList.remove('err');
+    ok = checkPhone('pk1p','pk1pErr', true) && ok;
+    ok = checkPhone('pk2p','pk2pErr', false) && ok;
+    ok = checkPhone('pk3p','pk3pErr', false) && ok;
+    if (!picked.cService){ err(true, 'cServiceErr'); ok = false; }
+  }
+  if (n === 4){
+    if (!v('fName')){ document.getElementById('fName').classList.add('err'); ok = false; } else document.getElementById('fName').classList.remove('err');
+    if (!v('mName')){ document.getElementById('mName').classList.add('err'); ok = false; } else document.getElementById('mName').classList.remove('err');
+    ok = checkPhone('fPhone','fPhoneErr', true) && ok;
+    ok = checkPhone('mPhone','mPhoneErr', true) && ok;
+  }
+  if (!ok) return;
+  [1,2,3,4].forEach(i => document.getElementById('p'+i).style.display = i === n ? 'block' : 'none');
+  [1,2,3,4].forEach(i => document.getElementById('s'+i).classList.toggle('on', i <= n));
+  if (n === 4) buildPrev();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function pickers(){
+  const lines = [];
+  if (v('pk1')) lines.push(v('pk1') + ' — ' + egIntl(v('pk1p')));
+  if (v('pk2')) lines.push(v('pk2') + (v('pk2p') ? ' — ' + egIntl(v('pk2p')) : ''));
+  if (v('pk3')) lines.push(v('pk3') + (v('pk3p') ? ' — ' + egIntl(v('pk3p')) : ''));
+  return lines.join('\n') || '—';
+}
+
+function msgText(){
+  const allOk = document.getElementById('ag1').checked && document.getElementById('ag2').checked && document.getElementById('ag3').checked;
+  return `📝 *تسجيل طفل — MindBloom Academy*
+🌼 ————— بيانات الطفل ————— 🌼
+👶 الاسم: ${v('cName')}
+🎂 الميلاد: ${v('cDOB')} (${v('cAge')})
+🚻 النوع: ${picked.cGender || ''}
+🏠 العنوان: ${v('cAddr')}
+👨‍👩‍👦 الإخوة: ${v('cSib') || '—'} (${v('cOrder') || '—'})
+🩺 حساسية: ${v('cAllergy') || 'لا'}
+💊 أمراض/أدوية: ${v('cMed') || 'لا'}
+💉 تطعيمات: ${picked.cVax || '—'}
+
+🎯 *الخدمات:* ${picked.cService || '—'}
+🚌 مواصلات: ${picked.cTrans || 'لا'}
+🕘 الفترة: ${picked.cPeriod || '—'}
+🔐 *المسموح باستلام الطفل:*
+${pickers()}
+
+👨‍👩‍👦 ————— ولي الأمر ————— 👨‍👩‍👦
+👤 الأب: ${v('fName')} — ${egIntl(v('fPhone'))}
+👤 الأم: ${v('mName')} — ${egIntl(v('mPhone'))}
+💬 المفضلة: ${picked.pPref || 'واتساب'}
+🚨 طوارئ: ${v('pEmerg') || '—'}
+📣 المصدر: ${v('pSource') || '—'}
+📝 ملاحظات: ${v('pNotes') || '—'}
+
+✍️ *الموافقات:* ${allOk ? '✅ وافق على البيانات واللائحة والطوارئ' : '⚠️ ناقصة'}
+📸 التصوير: ${picked.cPhoto || '—'}
+
+📎 مرفق: ملف PDF بالبيانات (من فضلك أرفقيه في الرسالة) — التوقيع النهائي يتم أثناء الحضور.`;
+}
+function buildPrev(){ const b = document.getElementById('prevBox'); b.textContent = msgText(); b.style.display = 'block'; }
+
+async function makePdf(filename){
+  document.getElementById('pdfDate').textContent =
+    'تاريخ الإرسال: ' + new Date().toLocaleString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  document.getElementById('pdfFields').innerHTML = [
+    ['اسم الطفل', v('cName')], ['تاريخ الميلاد', v('cDOB') + ' (' + v('cAge') + ')'],
+    ['النوع', picked.cGender || ''], ['العنوان', v('cAddr')],
+    ['حساسية', v('cAllergy') || 'لا'], ['أمراض/أدوية', v('cMed') || 'لا'], ['تطعيمات', picked.cVax || '—'],
+    ['الخدمات المطلوبة', picked.cService || '—'], ['مواصلات', picked.cTrans || 'لا'], ['الفترة', picked.cPeriod || '—'],
+    ['المسموح بالاستلام', pickers().replace(/\n/g, ' / ')],
+    ['ولي الأمر (أب)', v('fName') + ' — ' + egIntl(v('fPhone'))],
+    ['ولي الأمر (أم)', v('mName') + ' — ' + egIntl(v('mPhone'))],
+    ['طوارئ', v('pEmerg') || '—'], ['ملاحظات', v('pNotes') || '—'],
+    ['موافقة التصوير', picked.cPhoto || '—']
+  ].map(r => `<tr><td class="k">${r[0]}</td><td>${r[1] || '—'}</td></tr>`).join('');
+  document.getElementById('pdfSigNote').textContent =
+    '⚠️ سيتم التوقيع على نسخة ورقية من هذه الاستمارة + الاطلاع على اللائحة الداخلية أثناء الحضور بالأكاديمية.';
+  const node = document.getElementById('pdfDoc');
+  node.style.display = 'block';
+  await new Promise(r => setTimeout(r, 150));
+  const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+  node.style.display = 'none';
+  const pdf = window.jspdf.jsPDF('p', 'mm', 'a4');
+  const w = 210, h = canvas.height * w / canvas.width;
+  const img = canvas.toDataURL('image/png');
+  const n = Math.max(1, Math.ceil(h / 297));
+  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'PNG', 0, -i * 297, w, h); }
+  pdf.save(filename);
+  return canvas.toDataURL('image/png').split(',')[1];
+}
+
+async function send(){
+  let ok = true;
+  if (!document.getElementById('ag1').checked || !document.getElementById('ag2').checked || !document.getElementById('ag3').checked){
+    alert('عشان نكمل التسجيل، لازم تدوسي الموافقات الثلاثة ✍️'); return;
+  }
+  if (!picked.cPhoto){ err(true, 'cPhotoErr'); ok = false; }
+  if (!ok) return;
+
+  const filename = `MindBloom-تسجيل-${v('cName') || 'طفل'}-${Date.now()}.pdf`;
+  let b64 = null;
+  try { b64 = await makePdf(filename); } catch (e){ console.error(e); }
+
+  const rec = { id: Date.now(), type: 'تسجيل طفل', name: v('mName'), phone: egIntl(v('mPhone')), source: v('pSource') || '', date: new Date().toISOString(),
+    data: { child: v('cName'), age: v('cAge'), service: picked.cService, period: picked.cPeriod || '', area: v('cAddr') } };
+  MB.addSub(rec);
+  const url0 = MB.get().syncUrl;
+  if (url0 && b64){
+    try { fetch(url0, { method: 'POST', body: JSON.stringify({ ...rec, pdfName: filename, pdfBase64: b64 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}); } catch (e) {}
+  }
+
+  const url = `https://wa.me/${WA}?text=${encodeURIComponent(msgText())}`;
+  window.open(url, '_blank');
+  document.getElementById('p4').style.display = 'none';
+  document.getElementById('done').style.display = 'block';
+  document.getElementById('waBtn').onclick = () => window.open(url, '_blank');
+  document.getElementById('pdfBtn2').onclick = () => makePdf(filename);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function copyMsg(){ navigator.clipboard?.writeText(msgText()); alert('اتنسخت الرسالة ✅ ابعتيها على ٠١٠٢٧٠٥٢٣٩٧ وأرفقي ملف الـ PDF'); }
+</script>
+</body>
+</html>

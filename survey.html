@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استبيان رضا أولياء الأمور | MindBloom Academy</title>
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
+<script src="config-v2.js"></script>
+<style>
+  :root{--navy:#17356b;--navy-d:#0f2547;--turq:#2ec4b6;--turq-d:#1fa396;--amber:#ffb703;--pink:#ef476f;--bg:#f7fafd;--ink:#1c2b3a;--muted:#5d7285}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Segoe UI","Cairo",Tahoma,Arial,sans-serif;background:linear-gradient(160deg,#0f2547,#1d4b8f);color:var(--ink);line-height:1.7;min-height:100vh;padding:28px 14px}
+  .card{max-width:680px;margin:0 auto;background:#fff;border-radius:24px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden}
+  .head{background:linear-gradient(135deg,var(--navy),var(--navy-d));color:#fff;padding:26px 28px;text-align:center}
+  .head .logo{width:74px;height:74px;border-radius:50%;object-fit:cover;border:3px solid var(--amber);margin:0 auto 12px;display:block}
+  .head h1{font-size:1.3rem}
+  .head p{color:#cfe0f5;font-size:.88rem}
+  .body{padding:26px 28px}
+  h3.sec{color:var(--navy);margin:22px 0 12px;font-size:1.02rem;display:flex;gap:8px;align-items:center}
+  h3.sec:first-child{margin-top:0}
+  .row-eval{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed #edf2f8;font-size:.9rem}
+  .row-eval .lbl{flex:1}
+  .stars{display:flex;gap:4px;direction:ltr}
+  .stars button{background:none;border:none;font-size:1.35rem;cursor:pointer;filter:grayscale(1);opacity:.45;transition:.15s;padding:2px}
+  .stars button.on{filter:none;opacity:1;transform:scale(1.12)}
+  .fld{margin-bottom:14px}
+  .fld label{display:block;font-weight:700;color:var(--navy);font-size:.9rem;margin-bottom:6px}
+  .fld input,.fld textarea{width:100%;padding:12px 14px;border:2px solid #e3ecf5;border-radius:12px;font-family:inherit;font-size:.95rem;background:#fbfdfe}
+  .fld input:focus,.fld textarea:focus{outline:none;border-color:var(--turq)}
+  .nps{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .nps button{width:40px;height:40px;border-radius:50%;border:2px solid #e3ecf5;background:#fff;font-weight:800;cursor:pointer;color:var(--navy);transition:.15s}
+  .nps button.on{background:var(--turq);border-color:var(--turq);color:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:2px solid #e3ecf5;border-radius:999px;padding:8px 16px;font-size:.86rem;font-weight:600;cursor:pointer;transition:.2s}
+  .chip.on{background:var(--turq);border-color:var(--turq);color:#fff}
+  .btn{width:100%;background:var(--turq);color:#fff;font-weight:800;font-size:1rem;padding:15px;border:none;border-radius:14px;cursor:pointer;font-family:inherit;margin-top:18px;transition:.2s}
+  .btn:hover{background:var(--turq-d)}
+  .btn.wa{background:#25d366}
+  .btn.wa:hover{background:#1eb958}
+  .note{background:rgba(46,196,182,.10);border-radius:12px;padding:12px 14px;font-size:.83rem;margin-bottom:18px}
+  .done{display:none;text-align:center;padding:12px 0}
+  .done .big{font-size:3.4rem}
+  .done h2{color:var(--navy);margin:10px 0}
+  .done p{color:var(--muted);font-size:.9rem;margin-bottom:12px}
+  .done .btn{margin-bottom:10px}
+  .foot{text-align:center;padding:16px 28px 22px;color:var(--muted);font-size:.8rem}
+  .foot a{color:var(--turq-d);font-weight:700}
+  #pdfDoc{display:none;position:fixed;top:0;left:-12000px;width:794px;background:#fff;font-family:"Segoe UI","Cairo",Tahoma,Arial,sans-serif;direction:rtl;color:#1c2b3a;padding:40px 44px}
+  #pdfDoc .ph-head{display:flex;align-items:center;gap:16px;border-bottom:4px solid #ffb703;padding-bottom:16px;margin-bottom:20px}
+  #pdfDoc .ph-head img{width:84px;height:84px;border-radius:50%;border:2px solid #ffb703}
+  #pdfDoc .ph-head b{color:#17356b;font-size:22px;display:block}
+  #pdfDoc .ph-head small{color:#5d7285;font-size:13px}
+  #pdfDoc h2{color:#17356b;font-size:19px;margin-bottom:14px}
+  #pdfDoc .meta{background:#eef5fb;border-radius:10px;padding:10px 14px;font-size:13px;color:#17356b;font-weight:700;margin-bottom:16px}
+  #pdfDoc table{width:100%;border-collapse:collapse;margin-bottom:18px}
+  #pdfDoc td{border:1px solid #d7e3f0;padding:10px 12px;font-size:13.5px;vertical-align:top}
+  #pdfDoc td.k{background:#f4f8fc;font-weight:800;color:#17356b;width:36%}
+  #pdfDoc .sigs{display:flex;gap:24px;margin-top:26px}
+  #pdfDoc .sigbox{flex:1;border:2px solid #17356b;border-radius:12px;height:100px;position:relative}
+  #pdfDoc .sigbox span{position:absolute;top:8px;inset-inline-start:14px;font-size:13px;font-weight:800;color:#17356b}
+  #pdfDoc .ph-foot{margin-top:20px;font-size:12px;color:#5d7285;border-top:1px solid #e3ecf5;padding-top:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head">
+    <img class="logo" id="formLogo" src="images/logo-final.png" alt="MindBloom">
+    <h1 id="formTitle">⭐ استبيان رضا أولياء الأمور</h1>
+    <p id="formSub">صوتكم يصنع فرقًا 💛 — ٥ دقايق من وقتكم تساعدنا نطوّر خدمتنا لأطفالكم. الرد سري تمامًا.</p>
+  </div>
+  <div class="body">
+    <div class="note">🌸 يُوزَّع كل ٣ شهور — رأيك بيروح مباشرة لمديرة الأكاديمية (عبر واتساب) ويبتنى عليه خطة التطوير.</div>
+
+    <h3 class="sec">١. تقييمك لجوانب الخدمة</h3>
+    <div id="evals"></div>
+
+    <h3 class="sec">٢. السؤال الذهبي 🏆</h3>
+    <p style="font-size:.9rem;color:var(--muted);margin-bottom:10px">من ٠ لـ ١٠… ما مدى احتمالية إنك تراسلي MindBloom لصديقة أو قريبة؟<br>(٠ = مستحيل · ١٠ = أكيد وبقوة)</p>
+    <div class="nps" id="nps"></div>
+
+    <h3 class="sec">٣. بكلماتك 💬</h3>
+    <div class="fld"><label>أكتر حاجة عجبتكم عندنا؟ 🌸</label><input id="q1" placeholder="…"></div>
+    <div class="fld"><label>حاجة واحدة لو اتحسّنت هتفرق معاكم؟ 🔧</label><input id="q2" placeholder="…"></div>
+    <div class="fld"><label>أنشطة أو خدمات تتمنوا نضيفها؟ ✨</label><input id="q3" placeholder="…"></div>
+
+    <h3 class="sec">٤. أخيرًا 🙏</h3>
+    <p style="font-size:.88rem;color:var(--muted);margin-bottom:8px">هل تسمحوا لنا باستخدام رأيكم الإيجابي في تعريف الأهالي بنا؟</p>
+    <div class="chips" id="consent">
+      <span class="chip" data-v="نعم بالاسم الأول">نعم — بالاسم الأول</span>
+      <span class="chip" data-v="نعم بدون اسم">نعم — بدون اسم</span>
+      <span class="chip" data-v="لا شكرًا">لا — شكرًا</span>
+    </div>
+    <div class="fld" style="margin-top:12px"><label>اسمك (اختياري)</label><input id="pname" placeholder="اسمك الأول"></div>
+
+    <button class="btn wa" onclick="send()">💬 تحميل الـ PDF + الإرسال على واتساب</button>
+    <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:10px">هيتنزّل ملف PDF برأيك وبيتفتح واتساب برسالة جاهزة — من فضلك أرفقي ملف الـ PDF 📎</p>
+
+    <div class="done" id="done">
+      <div class="big">💚</div>
+      <h2>شكرًا من القلب… رأيكم بوصلتنا 🌸</h2>
+      <p>اتنزّل ملف PDF برأيك — لو مفتحش واتساب تلقائيًا دوسي الزرار وأرفقيه في الرسالة. وهنرد عليكم في أقرب وقت.</p>
+      <button class="btn wa" id="waBtn">💬 افتحي واتساب</button>
+      <button class="btn" id="pdfBtn2">⬇️ إعادة تحميل الـ PDF</button>
+      <p class="foot"><a href="index.html">← الرجوع للموقع</a></p>
+    </div>
+  </div>
+  <div class="foot">MindBloom Academy — استبيان الرضا SAT v2.0 · <a href="index.html">← الرجوع للموقع</a></div>
+</div>
+
+<div id="pdfDoc">
+  <div class="ph-head">
+    <img id="pdfLogo" src="images/logo-final.png" alt="">
+    <div><b>MindBloom Academy — مايند بلوم أكاديمي</b><small>نرعى طفلك اليوم ونبني شخصيته للمستقبل</small><br><small>📍 ١٤ شارع الأحقاف — الإبراهيمية — الإسكندرية · 📱 ٠١٠٢٧٠٥٢٣٩٧</small></div>
+  </div>
+  <h2>استبيان رضا أولياء الأمور</h2>
+  <div class="meta" id="pdfDate"></div>
+  <table id="pdfFields"></table>
+  <div class="sigs">
+    <div class="sigbox"><span>توقيع ولي الأمر (اختياري)</span></div>
+    <div class="sigbox"><span>توقيع الأكاديمية</span></div>
+  </div>
+  <div class="ph-foot">MindBloom Academy — استبيان الرضا SAT v2.0 · يُطبَّق كل ٣ أشهر</div>
+</div>
+
+<script>
+(function(){
+  const F = (MB.get() || {}).forms || {};
+  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
+  const L = (MB.get() || {}).site || {};
+  const setSrc = (id, t) => { const el = document.getElementById(id); if (el && t) el.src = t; };
+  setSrc('formLogo', L.logo); setSrc('pdfLogo', L.logo);
+  set('formTitle', F.surTitle); set('formSub', F.surSub);
+})();
+const WA = (MB.get() && MB.get().site && MB.get().site.wa) || "201027052397";
+const ASPECTS = ["النظافة والتعقيم اليومي","الأمان والإشراف","حنّية المعلمات وتعاملهم","التطور الملحوظ في طفلك","المحتوى والأنشطة","التقارير والتواصل مع الأهل","تعامل الإدارة وسرعة حل المشكلات","القيمة مقابل السعر"];
+const ratings = {};
+const em = ["😟","😐","🙂","😍"];
+const el = document.getElementById('evals');
+ASPECTS.forEach((a, i) => {
+  el.insertAdjacentHTML('beforeend', `<div class="row-eval"><span class="lbl">${a}</span>
+    <span class="stars" data-i="${i}">${[1,2,3,4].map(s => `<button type="button" onclick="rate(${i},${s})">${em[s-1]}</button>`).join('')}</span></div>`);
+});
+function rate(i, s){
+  ratings[i] = s;
+  const row = el.querySelectorAll('.stars')[i];
+  [...row.children].forEach((b, k) => b.classList.toggle('on', k < s));
+}
+let nps = null;
+const np = document.getElementById('nps');
+for (let i = 0; i <= 10; i++) np.insertAdjacentHTML('beforeend', `<button type="button" onclick="setNps(${i})">${i}</button>`);
+function setNps(n){ nps = n; [...np.children].forEach((b, k) => b.classList.toggle('on', k === n)); }
+let consent = '';
+document.querySelectorAll('#consent .chip').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('#consent .chip').forEach(x => x.classList.remove('on'));
+  c.classList.add('on'); consent = c.dataset.v;
+}));
+const starTxt = {1:'😟 سيئ',2:'😐 مقبول',3:'🙂 جيد',4:'😍 ممتاز'};
+function q1v(){ return document.getElementById('q1').value.trim(); }
+function q2v(){ return document.getElementById('q2').value.trim(); }
+function q3v(){ return document.getElementById('q3').value.trim(); }
+function pv(){ return document.getElementById('pname').value.trim(); }
+
+function msg(){
+  let t = `🌸 *استبيان رضا — MindBloom Academy*\n———————————————\n⭐ *التقييمات:*\n`;
+  ASPECTS.forEach((a, i) => t += `${i+1}. ${a}: ${ratings[i] ? starTxt[ratings[i]] : '—'}\n`);
+  t += `🏆 *السؤال الذهبي (٠-١٠):* ${nps ?? '—'}\n\n💬 *بكلماتكم:*\n`;
+  t += `أكثر حاجة عجبتنا: ${q1v() || '—'}\nحاجة لو تحسنت هتفرق: ${q2v() || '—'}\nتمنينا نضيفه: ${q3v() || '—'}\n`;
+  t += `\n🙏 استخدام الرأي: ${consent || '—'}\n👤 الاسم: ${pv() || '(مخفي)'}\n\n📎 مرفق: ملف PDF برأيكم (من فضلك أرفقيه في الرسالة).`;
+  return t;
+}
+
+async function makePdf(filename){
+  document.getElementById('pdfDate').textContent =
+    'تاريخ الإرسال: ' + new Date().toLocaleString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  document.getElementById('pdfFields').innerHTML = [
+    ...ASPECTS.map((a, i) => [a, ratings[i] ? starTxt[ratings[i]] : '—']),
+    ['السؤال الذهبي (٠-١٠)', String(nps ?? '—')],
+    ['أكتر حاجة عجبتنا', q1v() || '—'], ['حاجة لو تحسنت هتفرق', q2v() || '—'],
+    ['تمنينا نضيفه', q3v() || '—'], ['السماح باستعمال الرأي', consent || '—'],
+    ['الاسم', pv() || '(مخفي)']
+  ].map(r => `<tr><td class="k">${r[0]}</td><td>${r[1] || '—'}</td></tr>`).join('');
+  const node = document.getElementById('pdfDoc');
+  node.style.display = 'block';
+  await new Promise(r => setTimeout(r, 150));
+  const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+  node.style.display = 'none';
+  const pdf = window.jspdf.jsPDF('p', 'mm', 'a4');
+  const w = 210, h = canvas.height * w / canvas.width;
+  const img = canvas.toDataURL('image/png');
+  const n = Math.max(1, Math.ceil(h / 297));
+  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'PNG', 0, -i * 297, w, h); }
+  pdf.save(filename);
+  return canvas.toDataURL('image/png').split(',')[1];
+}
+
+async function send(){
+  const filename = `MindBloom-استبيان-رضا-${Date.now()}.pdf`;
+  let b64 = null;
+  try { b64 = await makePdf(filename); } catch (e){ console.error(e); }
+  const rec = { id: Date.now(), type: 'استبيان رضا', name: pv() || '(بدون اسم)', phone: '', source: '', date: new Date().toISOString(),
+    data: { nps: nps ?? '', consent: consent || '' } };
+  MB.addSub(rec);
+  const url0 = MB.get().syncUrl;
+  if (url0 && b64){
+    try { fetch(url0, { method: 'POST', body: JSON.stringify({ ...rec, pdfName: filename, pdfBase64: b64 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}); } catch (e) {}
+  }
+  const url = `https://wa.me/${WA}?text=${encodeURIComponent(msg())}`;
+  window.open(url, '_blank');
+  document.getElementById('done').style.display = 'block';
+  document.getElementById('waBtn').onclick = () => window.open(url, '_blank');
+  document.getElementById('pdfBtn2').onclick = () => makePdf(filename);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
