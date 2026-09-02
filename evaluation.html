@@ -6,6 +6,7 @@
 <title>احجزي موعد تقييم مجاني | MindBloom Academy</title>
 <script src="lib/html2canvas.min.js"></script>
 <script src="lib/jspdf.umd.min.js"></script>
+<script src="supabase-config.js"></script>
 <script src="config-v2.js"></script>
 <style>
   :root{--navy:#17356b;--navy-d:#0f2547;--turq:#2ec4b6;--turq-d:#1fa396;--amber:#ffb703;--pink:#ef476f;--bg:#f7fafd;--ink:#1c2b3a;--muted:#5d7285;--rad:18px;--shadow:0 8px 28px rgba(23,53,107,.10)}
@@ -142,16 +143,18 @@
         <select id="pSource"><option value="">— اختاري —</option><option>فيسبوك</option><option>إنستجرام</option><option>تيك توك</option><option>خرائط جوجل</option><option>ترشيح من أسرة</option><option>لافتة / إعلان مطبوع</option><option>سكان المنطقة</option></select>
       </div>
       <div class="prev" id="prevBox"></div>
-      <button class="btn wa" onclick="send()">💬 تحميل الـ PDF + الإرسال على واتساب</button>
+      <label style="display:flex;gap:10px;align-items:flex-start;font-size:.84rem;margin:12px 0"><input type="checkbox" id="dataConsent" style="width:20px;height:20px;accent-color:var(--turq);flex-shrink:0;margin-top:2px"><span>أوافق على حفظ هذه البيانات وملف PDF بشكل آمن لاستخدامهما في التواصل وتجهيز التقييم.</span></label>
+      <div id="turnstileBox" style="display:none;justify-content:center;margin:16px 0"></div>
+      <button class="btn wa" id="sendBtn" onclick="send()">💾 حفظ الطلب مركزيًا + تحميل PDF + واتساب</button>
       <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:10px">هيتنزّل ملف PDF بالبيانات (التوقيع عليه وقت الحضور) وبيتفتح واتساب برسالة جاهزة — من فضلك أرفقي ملف الـ PDF في الرسالة 📎</p>
     </div>
 
     <!-- اكتمل -->
     <div class="done" id="done">
       <div class="big">💚</div>
-      <h2>تم تجهيز ملفك!</h2>
-      <p>اتنزّل ملف PDF بالبيانات — <b>التوقيع عليه يتم أثناء الحضور</b>.<br>
-      لو مفتحش واتساب تلقائيًا: دوسي الزرار اللي تحت وأرفقي ملف الـ PDF مع الرسالة. وهنرد عليكم في أقرب وقت لتحديد الموعد.</p>
+      <h2>تم حفظ طلبك بنجاح!</h2>
+      <p>وصل الطلب إلى لوحة الإدارة واتحفظت نسخة PDF خاصة وآمنة — <b>والتوقيع يتم أثناء الحضور</b>.<br>
+      لو مفتحش واتساب تلقائيًا: دوسي الزرار اللي تحت وأرفقي نسخة الـ PDF مع الرسالة.</p>
       <button class="btn wa" id="waBtn">💬 افتحي واتساب</button>
       <button class="btn" id="pdfBtn2">⬇️ إعادة تحميل الـ PDF</button>
       <button class="btn" style="background:var(--navy)" onclick="copyMsg()">📋 كوبي الرسالة</button>
@@ -179,15 +182,17 @@
 </div>
 
 <script>
-(function(){
+let WA = "201027052397";
+MB.ready.then(async () => {
   const F = (MB.get() || {}).forms || {};
-  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
   const L = (MB.get() || {}).site || {};
+  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
   const setSrc = (id, t) => { const el = document.getElementById(id); if (el && t) el.src = t; };
   setSrc('formLogo', L.logo); setSrc('pdfLogo', L.logo);
   set('formTitle', F.evalTitle); set('formSub', F.evalSub); set('formBook', F.evalBookNote);
-})();
-const WA = (MB.get() && MB.get().site && MB.get().site.wa) || "201027052397";
+  WA = MB.waNumber();
+  try { await MB.initTurnstile('turnstileBox'); } catch (e) { console.error(e); }
+});
 let picked = {};
 
 /* ═══ اختيار الشيبز ═══ */
@@ -267,7 +272,8 @@ async function makePdf(filename){
     ['تقييم سابق في مكان تاني', picked.cPrev || 'لا'],
     ['أوقات مريحة (تفضيل غير ملزم)', picked.cSlot || '—'],
     ['ولي الأمر', v('pName')], ['الموبايل', egIntl(v('pPhone'))],
-    ['المنطقة', v('pArea') || '—'], ['المصدر', v('pSource') || '—']
+    ['المنطقة', v('pArea') || '—'], ['المصدر', v('pSource') || '—'],
+    ['موافقة الحفظ الإلكتروني', 'نعم']
   ].map(r => `<tr><td class="k">${r[0]}</td><td>${r[1] || '—'}</td></tr>`).join('');
   document.getElementById('pdfSigNote').textContent =
     '📅 الحجز بموعد مسبق يتم تحديده من إدارة الأكاديمية — سيتم التواصل معكم لتأكيد الموعد. التوقيع النهائي على هذه الاستمارة يتم أثناء الحضور.';
@@ -278,11 +284,12 @@ async function makePdf(filename){
   node.style.display = 'none';
   const pdf = window.jspdf.jsPDF('p', 'mm', 'a4');
   const w = 210, h = canvas.height * w / canvas.width;
-  const img = canvas.toDataURL('image/png');
+  const img = canvas.toDataURL('image/jpeg', 0.88);
   const n = Math.max(1, Math.ceil(h / 297));
-  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'PNG', 0, -i * 297, w, h); }
+  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'JPEG', 0, -i * 297, w, h, undefined, 'FAST'); }
+  const pdfBase64 = pdf.output('datauristring').split(',')[1];
   pdf.save(filename);
-  return canvas.toDataURL('image/png').split(',')[1];
+  return pdfBase64;
 }
 
 /* ═══ الإرسال ═══ */
@@ -292,18 +299,33 @@ async function send(){
   const ph = v('pPhone');
   if (!egOk(ph)){ document.getElementById('pPhoneWrap').classList.add('err'); err(true, 'pPhoneErr'); ok = false; }
   else { document.getElementById('pPhoneWrap').classList.remove('err'); err(false, 'pPhoneErr'); }
+  if (!document.getElementById('dataConsent').checked){ alert('لازم توافقي على حفظ البيانات لإرسال طلب التقييم'); ok = false; }
   if (!ok) return;
 
-  const filename = `MindBloom-تقييم-${v('cName')||'طفل'}-${Date.now()}.pdf`;
-  let b64 = null;
-  try { b64 = await makePdf(filename); } catch (e){ console.error(e); }
+  const token = MB.turnstileToken('turnstileBox');
+  if ((MB._cloud().turnstileSiteKey || '') && !token){ alert('من فضلك أكملي التحقق الأمني أولًا'); return; }
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = '⏳ جاري تجهيز وحفظ الطلب…';
 
-  const rec = { id: Date.now(), type: 'تقييم مجاني', name: v('pName'), phone: egIntl(ph), source: v('pSource') || '', date: new Date().toISOString(),
-    data: { child: v('cName'), age: v('cAge'), gender: picked.cGender, service: picked.cService, concern: v('cConcern'), prev: picked.cPrev || '', slot: picked.cSlot || '', area: v('pArea') } };
-  MB.addSub(rec);
-  const url0 = MB.get().syncUrl;
-  if (url0 && b64){
-    try { fetch(url0, { method: 'POST', body: JSON.stringify({ ...rec, pdfName: filename, pdfBase64: b64 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}); } catch (e) {}
+  const filename = `MindBloom-تقييم-${v('cName')||'طفل'}-${Date.now()}.pdf`;
+  let b64;
+  try { b64 = await makePdf(filename); }
+  catch (e){ console.error(e); alert('تعذر تجهيز ملف PDF — حاولي مرة أخرى'); btn.disabled = false; btn.textContent = '💾 حفظ الطلب مركزيًا + تحميل PDF + واتساب'; return; }
+
+  const rec = {
+    type: 'تقييم مجاني', name: v('pName'), phone: egIntl(ph), source: v('pSource') || '',
+    data: {
+      childName: v('cName'), age: v('cAge'), gender: picked.cGender || '',
+      services: picked.cService || '', concern: v('cConcern'), previousEvaluation: picked.cPrev || '',
+      preferredSlot: picked.cSlot || '', guardianName: v('pName'), guardianPhone: egIntl(ph),
+      area: v('pArea') || '', source: v('pSource') || '', dataStorageConsent: true
+    }
+  };
+  try { await MB.addSub(rec, b64, filename, token); }
+  catch (e) {
+    console.error(e); MB.resetTurnstile('turnstileBox');
+    alert('لم يتم حفظ الطلب مركزيًا: ' + (e.message || 'حاولي مرة أخرى'));
+    btn.disabled = false; btn.textContent = '💾 حفظ الطلب مركزيًا + تحميل PDF + واتساب'; return;
   }
 
   const url = `https://wa.me/${WA}?text=${encodeURIComponent(msgText())}`;

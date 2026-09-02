@@ -1,12 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
-   MindBloom — نظام إعدادات الموقع (CMS خفيف)
-   كل محتوى الموقع بيتقرأ من هنا — ولوحة التحكم بتعدّل عليه.
-   الحفظ: متصفح المدير (localStorage) + نسخة JSON للتصدير/النقل.
+   MindBloom Cloud — إعدادات مركزية عبر Supabase
+   مصدر الحقيقة: PostgreSQL. localStorage غير مستخدم للإعدادات أو الطلبات.
    ═══════════════════════════════════════════════════════════════ */
 const MB = {
-  KEY: 'mb_config_v1',
-  SUBKEY: 'mb_submissions_v1',
-  PWD: 'Memaa388@',
 
   defaults: {
     banner: {
@@ -203,7 +199,8 @@ const MB = {
       mbarWaLink: 'https://wa.me/201027052397?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%D8%AC%D8%AF%D8%A7%D9%8B%D8%8C%20%D8%A8%D8%AF%D8%A7%20%D8%A3%D8%B3%D8%A3%D9%84%D9%8A%20%D8%B9%D9%86%20MindBloom',
       footerAddr: '📍 ١٤ شارع الأحقاف — الإبراهيمية — الإسكندرية',
       footerWa: '📱 واتساب: ٠١٠٢٧٠٥٢٣٩٧',
-      footerTel: '☎️ تليفون: ٠٣-٥٩٣٠٧٨٠'
+      footerTel: '☎️ تليفون: ٠٣-٥٩٣٠٧٨٠',
+      footerCredit: 'صنع بكل حب من ♡Memaa388♡'
     },
 
     forms: {
@@ -216,52 +213,321 @@ const MB = {
       surSub: 'صوتكم يصنع فرقًا 💛 — ٥ دقايق من وقتكم تساعدنا نطوّر خدمتنا لأطفالكم. الرد سري تمامًا.'
     },
 
-    syncUrl: ""
+  },
+
+  state: null,
+  cloudError: '',
+  AUTH_KEY: 'mb_admin_session_v2',
+
+  _cloud() {
+    return (typeof window !== 'undefined' && window.MB_CLOUD) || {};
+  },
+
+  _apiKey() {
+    const c = this._cloud();
+    return c.publishableKey || c.anonKey || '';
+  },
+
+  isConfigured() {
+    const c = this._cloud(), key = this._apiKey();
+    return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(c.supabaseUrl || '') &&
+      !!key && !String(key).includes('YOUR_');
+  },
+
+  _clone(v) { return JSON.parse(JSON.stringify(v)); },
+
+  _merge(base, override) {
+    if (!override || typeof override !== 'object') return base;
+    for (const [k, v] of Object.entries(override)) {
+      if (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) {
+        this._merge(base[k], v);
+      } else {
+        base[k] = this._clone(v);
+      }
+    }
+    return base;
+  },
+
+  _headers(token, json = true) {
+    const h = { apikey: this._apiKey() };
+    /* Publishable keys تُرسل في apikey فقط؛ Authorization مخصص لجلسة المستخدم JWT. */
+    if (token) h.Authorization = 'Bearer ' + token;
+    if (json) h['Content-Type'] = 'application/json';
+    return h;
+  },
+
+  async _result(res, fallback) {
+    const text = await res.text();
+    let body = null;
+    try { body = text ? JSON.parse(text) : null; } catch (_) { body = text; }
+    if (!res.ok) {
+      const msg = body && (body.message || body.msg || body.error_description || body.error) || fallback || ('HTTP ' + res.status);
+      throw new Error(msg);
+    }
+    return body;
+  },
+
+  async load() {
+    this.state = this._clone(this.defaults);
+    this.cloudError = '';
+    if (!this.isConfigured()) {
+      this.cloudError = 'بيانات Supabase غير مضبوطة في supabase-config.js';
+      return this.state;
+    }
+    const c = this._cloud();
+    try {
+      const id = encodeURIComponent(c.siteConfigId || 'main');
+      const res = await fetch(`${c.supabaseUrl}/rest/v1/site_config?id=eq.${id}&select=data`, {
+        headers: this._headers(), cache: 'no-store'
+      });
+      const rows = await this._result(res, 'تعذر تحميل إعدادات الموقع');
+      if (rows && rows[0] && rows[0].data) this.state = this._merge(this._clone(this.defaults), rows[0].data);
+    } catch (e) {
+      this.cloudError = e.message || 'تعذر الاتصال بقاعدة البيانات';
+      console.error('MindBloom config:', e);
+    }
+    return this.state;
   },
 
   get() {
-    let c = {};
-    try { c = JSON.parse(localStorage.getItem(this.KEY) || '{}'); } catch (e) {}
-    const def = JSON.parse(JSON.stringify(this.defaults));
-    const merge = (a, b) => {
-      for (const k of Object.keys(a)) {
-        if (b[k] !== undefined) {
-          if (typeof a[k] === 'object' && a[k] !== null && !Array.isArray(a[k])) merge(a[k], b[k]);
-          else a[k] = b[k];
-        }
-      }
-      return a;
-    };
-    return merge(def, c);
+    return this.state || this._clone(this.defaults);
   },
 
-  set(cfg) { localStorage.setItem(this.KEY, JSON.stringify(cfg)); },
-  reset() { localStorage.removeItem(this.KEY); },
+  async set(cfg) {
+    if (!this.isConfigured()) throw new Error('اضبطي بيانات Supabase أولًا');
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    const clean = this._clone(cfg);
+    const res = await fetch(`${c.supabaseUrl}/rest/v1/site_config?on_conflict=id`, {
+      method: 'POST',
+      headers: { ...this._headers(token), Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ id: c.siteConfigId || 'main', data: clean, updated_at: new Date().toISOString() })
+    });
+    await this._result(res, 'لم يتم حفظ الإعدادات');
+    this.state = this._merge(this._clone(this.defaults), clean);
+    return this.state;
+  },
 
-  exportJSON() { return JSON.stringify(this.get(), null, 1); },
-  importJSON(str) {
+  async reset() { return this.set(this._clone(this.defaults)); },
+  exportJSON() { return JSON.stringify(this.get(), null, 2); },
+  async importJSON(str) {
     const obj = JSON.parse(str);
-    if (!obj || typeof obj !== 'object') throw new Error('ملف غير صالح');
-    this.set(obj);
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('ملف غير صالح');
+    return this.set(obj);
   },
 
-  /* ===== الطلبات (استمارات) ===== */
-  getSubs() {
-    try { return JSON.parse(localStorage.getItem(this.SUBKEY) || '[]'); } catch (e) { return []; }
+  /* ===== دخول الإدارة عبر Supabase Auth ===== */
+  _session() {
+    try { return JSON.parse(sessionStorage.getItem(this.AUTH_KEY) || 'null'); } catch (_) { return null; }
   },
-  addSub(s) {
-    const all = this.getSubs();
-    all.unshift(s);
-    localStorage.setItem(this.SUBKEY, JSON.stringify(all.slice(0, 200)));
-    const url = this.get().syncUrl;
-    if (url) {
-      try {
-        fetch(url, { method: 'POST', body: JSON.stringify(s), headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
-          .catch(() => {});
-      } catch (e) {}
+  _storeSession(s) {
+    const out = { ...s, expires_at_ms: Date.now() + Math.max(60, Number(s.expires_in || 3600)) * 1000 };
+    sessionStorage.setItem(this.AUTH_KEY, JSON.stringify(out));
+    this.user = out.user || null;
+    return out;
+  },
+  hasSession() { return !!this._session(); },
+  async login(email, password) {
+    if (!this.isConfigured()) throw new Error('اضبطي supabase-config.js أولًا');
+    const c = this._cloud();
+    const res = await fetch(`${c.supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: 'POST', headers: { apikey: this._apiKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: String(email || '').trim(), password })
+    });
+    const s = await this._result(res, 'بيانات الدخول غير صحيحة');
+    this._storeSession(s);
+    const admin = await this._checkAdmin(s.access_token);
+    if (!admin) {
+      sessionStorage.removeItem(this.AUTH_KEY);
+      throw new Error('هذا الحساب ليس ضمن مديري الموقع');
     }
+    return s.user;
+  },
+  async _refresh(s) {
+    const c = this._cloud();
+    const res = await fetch(`${c.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST', headers: { apikey: this._apiKey(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: s.refresh_token })
+    });
+    return this._storeSession(await this._result(res, 'انتهت جلسة الإدارة؛ سجّلي الدخول من جديد'));
+  },
+  async _ensureToken() {
+    let s = this._session();
+    if (!s) throw new Error('سجّلي الدخول أولًا');
+    if (!s.access_token || Date.now() > Number(s.expires_at_ms || 0) - 60000) s = await this._refresh(s);
+    return s.access_token;
+  },
+  async _checkAdmin(token) {
+    const c = this._cloud();
+    const res = await fetch(`${c.supabaseUrl}/rest/v1/rpc/is_admin`, {
+      method: 'POST', headers: this._headers(token), body: '{}'
+    });
+    const out = await this._result(res, 'تعذر التحقق من صلاحية الإدارة');
+    return out === true;
+  },
+  async validateSession() {
+    try {
+      const token = await this._ensureToken();
+      const c = this._cloud();
+      const res = await fetch(`${c.supabaseUrl}/auth/v1/user`, { headers: this._headers(token, false) });
+      const user = await this._result(res, 'انتهت الجلسة');
+      if (!await this._checkAdmin(token)) throw new Error('لا توجد صلاحية إدارة');
+      this.user = user;
+      return true;
+    } catch (e) {
+      sessionStorage.removeItem(this.AUTH_KEY);
+      return false;
+    }
+  },
+  async logout() {
+    const s = this._session();
+    sessionStorage.removeItem(this.AUTH_KEY);
+    this.user = null;
+    if (!s || !s.access_token || !this.isConfigured()) return;
+    const c = this._cloud();
+    try { await fetch(`${c.supabaseUrl}/auth/v1/logout`, { method: 'POST', headers: this._headers(s.access_token, false) }); } catch (_) {}
+  },
+
+  /* ===== الطلبات المركزية + ملفات PDF الخاصة ===== */
+  async addSub(submission, pdfBase64, pdfName, turnstileToken = '') {
+    if (!this.isConfigured()) throw new Error('خدمة الحفظ المركزي غير مضبوطة');
+    if (!pdfBase64) throw new Error('تعذر تجهيز ملف PDF');
+    const c = this._cloud();
+    const res = await fetch(`${c.supabaseUrl}/functions/v1/${encodeURIComponent(c.functionName || 'submit-form')}`, {
+      method: 'POST',
+      headers: this._headers(),
+      body: JSON.stringify({ submission, pdfBase64, pdfName, turnstileToken, website: '' })
+    });
+    return this._result(res, 'لم يتم حفظ الطلب؛ حاولي مرة أخرى');
+  },
+  async getSubs() {
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    const q = 'select=id,type,name,phone,source,payload,pdf_path,pdf_name,status,created_at&order=created_at.desc&limit=500';
+    const res = await fetch(`${c.supabaseUrl}/rest/v1/submissions?${q}`, { headers: this._headers(token), cache: 'no-store' });
+    const rows = await this._result(res, 'تعذر تحميل الطلبات');
+    return (rows || []).map(r => ({
+      id: r.id, type: r.type, name: r.name, phone: r.phone, source: r.source,
+      data: r.payload || {}, pdfPath: r.pdf_path, pdfName: r.pdf_name,
+      status: r.status, date: r.created_at
+    }));
+  },
+  async setSubmissionStatus(id, status) {
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    const allowed = ['جديد', 'تم التواصل', 'مكتمل', 'ملغي'];
+    if (!allowed.includes(status)) throw new Error('حالة غير صالحة');
+    const res = await fetch(`${c.supabaseUrl}/rest/v1/submissions?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH', headers: { ...this._headers(token), Prefer: 'return=minimal' }, body: JSON.stringify({ status })
+    });
+    await this._result(res, 'تعذر تحديث الحالة');
+  },
+  async deleteSub(id, pdfPath) {
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    if (pdfPath) {
+      const r0 = await fetch(`${c.supabaseUrl}/storage/v1/object/submission-pdfs`, {
+        method: 'DELETE', headers: this._headers(token), body: JSON.stringify({ prefixes: [pdfPath] })
+      });
+      await this._result(r0, 'تعذر حذف ملف PDF');
+    }
+    const res = await fetch(`${c.supabaseUrl}/rest/v1/submissions?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE', headers: { ...this._headers(token), Prefer: 'return=minimal' }
+    });
+    await this._result(res, 'تعذر حذف الطلب');
+  },
+  async deleteAllSubs() {
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    const all = await this.getSubs();
+    const paths = all.map(x => x.pdfPath).filter(Boolean);
+    if (paths.length) {
+      const r0 = await fetch(`${c.supabaseUrl}/storage/v1/object/submission-pdfs`, {
+        method: 'DELETE', headers: this._headers(token), body: JSON.stringify({ prefixes: paths })
+      });
+      await this._result(r0, 'تعذر حذف ملفات الطلبات');
+    }
+    const res = await fetch(`${c.supabaseUrl}/rest/v1/submissions?id=not.is.null`, {
+      method: 'DELETE', headers: { ...this._headers(token), Prefer: 'return=minimal' }
+    });
+    await this._result(res, 'تعذر حذف الطلبات');
+  },
+  async getPdfUrl(path) {
+    if (!path) throw new Error('لا يوجد ملف PDF لهذا الطلب');
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    const encoded = String(path).split('/').map(encodeURIComponent).join('/');
+    const res = await fetch(`${c.supabaseUrl}/storage/v1/object/sign/submission-pdfs/${encoded}`, {
+      method: 'POST', headers: this._headers(token), body: JSON.stringify({ expiresIn: 600 })
+    });
+    const out = await this._result(res, 'تعذر فتح ملف PDF');
+    const signed = out.signedURL || out.signedUrl;
+    if (!signed) throw new Error('لم يرجع رابط صالح للملف');
+    return /^https?:/i.test(signed) ? signed : `${c.supabaseUrl}/storage/v1${signed}`;
+  },
+
+  /* ===== صور الموقع العامة ===== */
+  async uploadMedia(file) {
+    if (!file || !String(file.type || '').startsWith('image/')) throw new Error('اختاري ملف صورة صالحًا');
+    if (file.size > 8 * 1024 * 1024) throw new Error('حجم الصورة أكبر من 8MB');
+    const token = await this._ensureToken();
+    const c = this._cloud();
+    const ext0 = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const ext = ['jpg','jpeg','png','webp','gif'].includes(ext0) ? ext0 : 'jpg';
+    const uid = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(16).slice(2));
+    const path = `site/${new Date().toISOString().slice(0,10)}/${uid}.${ext}`;
+    const encoded = path.split('/').map(encodeURIComponent).join('/');
+    const res = await fetch(`${c.supabaseUrl}/storage/v1/object/site-media/${encoded}`, {
+      method: 'POST',
+      headers: { ...this._headers(token, false), 'Content-Type': file.type || 'application/octet-stream', 'x-upsert': 'false' },
+      body: file
+    });
+    await this._result(res, 'تعذر رفع الصورة');
+    return `${c.supabaseUrl}/storage/v1/object/public/site-media/${encoded}`;
+  },
+
+  /* ===== Cloudflare Turnstile (اختياري لمقاومة السبام) ===== */
+  async initTurnstile(containerId) {
+    const key = this._cloud().turnstileSiteKey || '';
+    const box = document.getElementById(containerId);
+    if (!box || !key) { if (box) box.style.display = 'none'; return null; }
+    box.style.display = 'flex';
+    if (!window.turnstile) {
+      if (!window.__mbTurnstilePromise) {
+        window.__mbTurnstilePromise = new Promise((resolve, reject) => {
+          const sc = document.createElement('script');
+          sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+          sc.async = true; sc.defer = true;
+          sc.onload = resolve;
+          sc.onerror = () => reject(new Error('تعذر تحميل التحقق الأمني'));
+          document.head.appendChild(sc);
+        });
+      }
+      await window.__mbTurnstilePromise;
+    }
+    this.turnstileWidgets = this.turnstileWidgets || {};
+    if (this.turnstileWidgets[containerId] !== undefined) return this.turnstileWidgets[containerId];
+    this.turnstileWidgets[containerId] = window.turnstile.render(box, { sitekey: key, theme: 'light', language: 'ar' });
+    return this.turnstileWidgets[containerId];
+  },
+  turnstileToken(containerId) {
+    const id = this.turnstileWidgets && this.turnstileWidgets[containerId];
+    return id === undefined || !window.turnstile ? '' : window.turnstile.getResponse(id);
+  },
+  resetTurnstile(containerId) {
+    const id = this.turnstileWidgets && this.turnstileWidgets[containerId];
+    if (id !== undefined && window.turnstile) window.turnstile.reset(id);
+  },
+
+  waNumber() {
+    let n = String((this.get().site || {}).wa || '').replace(/\D/g, '');
+    if (n.startsWith('00')) n = n.slice(2);
+    if (n.startsWith('0')) n = '20' + n.slice(1);
+    return n || '201027052397';
   }
 };
+
+MB.ready = MB.load();
 
 /* ===== تطبيق الإعدادات على الموقع (index.html) ===== */
 MB.init = function () {

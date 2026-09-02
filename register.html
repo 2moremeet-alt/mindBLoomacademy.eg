@@ -6,6 +6,7 @@
 <title>تسجيل طفل | MindBloom Academy</title>
 <script src="lib/html2canvas.min.js"></script>
 <script src="lib/jspdf.umd.min.js"></script>
+<script src="supabase-config.js"></script>
 <script src="config-v2.js"></script>
 <style>
   :root{--navy:#17356b;--navy-d:#0f2547;--turq:#2ec4b6;--turq-d:#1fa396;--amber:#ffb703;--pink:#ef476f;--green:#57a639;--bg:#f7fafd;--ink:#1c2b3a;--muted:#5d7285}
@@ -208,7 +209,8 @@
       <div class="agree"><input type="checkbox" id="ag1"><span>أقرّ بصحة البيانات، وأتعهد بإخطار الإدارة فور أي تغيير (هاتف/عنوان/حالة صحية).</span></div>
       <div class="agree"><input type="checkbox" id="ag2"><span>اطلعتُ على اللائحة الداخلية (مواعيد الحضور والانصراف — قواعد السداد — سياسة الغياب) وأوافق عليها.
         <small>📎 ملاحظة: الاطلاع على اللائحة الداخلية يتم أثناء التسجيل، والتوقيع النهائي عليها يتم عند الحضور.</small></span></div>
-      <div class="agree" style="border-bottom:none"><input type="checkbox" id="ag3"><span>أوافق على تطبيق خطة الطوارئ الطبية المعتمدة عند الحاجة، مع إخطاري فورًا.</span></div>
+      <div class="agree"><input type="checkbox" id="ag3"><span>أوافق على تطبيق خطة الطوارئ الطبية المعتمدة عند الحاجة، مع إخطاري فورًا.</span></div>
+      <div class="agree" style="border-bottom:none"><input type="checkbox" id="ag4"><span>أوافق على حفظ بيانات التسجيل وملف PDF بشكل آمن لاستخدامهما في فتح ملف الطفل والتواصل الإداري.</span></div>
       <div class="box" style="margin-top:14px">
         <b style="color:var(--navy);font-size:.88rem">📸 التصوير للأغراض التعليمية/التسويقية</b>
         <div class="fld" style="margin-top:8px;margin-bottom:0">
@@ -217,16 +219,17 @@
         </div>
       </div>
       <div class="prev" id="prevBox"></div>
-      <button class="btn wa" onclick="send()">💬 تحميل الـ PDF + الإرسال على واتساب</button>
+      <div id="turnstileBox" style="display:none;justify-content:center;margin:16px 0"></div>
+      <button class="btn wa" id="sendBtn" onclick="send()">💾 حفظ التسجيل مركزيًا + تحميل PDF + واتساب</button>
       <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:10px">هيتنزّل ملف PDF بالبيانات (التوقيع عليه وقت الحضور) وبيتفتح واتساب برسالة جاهزة — من فضلك أرفقي ملف الـ PDF في الرسالة 📎</p>
     </div>
 
     <!-- اكتمل -->
     <div class="done" id="done">
       <div class="big">🌸</div>
-      <h2>تم تجهيز ملف التسجيل!</h2>
-      <p>اتنزّل ملف PDF بالبيانات — <b>التوقيع النهائي يتم أثناء الحضور</b>.<br>
-      لو مفتحش واتساب تلقائيًا: دوسي الزرار وأرفقي ملف الـ PDF. وهنرد عليكم في أقرب وقت لتأكيد موعد الزيارة.</p>
+      <h2>تم حفظ التسجيل بنجاح!</h2>
+      <p>وصلت البيانات إلى لوحة الإدارة واتحفظت نسخة PDF خاصة وآمنة — <b>والتوقيع النهائي يتم أثناء الحضور</b>.<br>
+      لو مفتحش واتساب تلقائيًا: دوسي الزرار وأرفقي نسخة الـ PDF.</p>
       <button class="btn wa" id="waBtn">💬 افتحي واتساب</button>
       <button class="btn" id="pdfBtn2">⬇️ إعادة تحميل الـ PDF</button>
       <button class="btn" style="background:var(--navy)" onclick="copyMsg()">📋 كوبي الرسالة</button>
@@ -254,15 +257,17 @@
 </div>
 
 <script>
-(function(){
+let WA = "201027052397";
+MB.ready.then(async () => {
   const F = (MB.get() || {}).forms || {};
-  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
   const L = (MB.get() || {}).site || {};
+  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
   const setSrc = (id, t) => { const el = document.getElementById(id); if (el && t) el.src = t; };
   setSrc('formLogo', L.logo); setSrc('pdfLogo', L.logo);
   set('formTitle', F.regTitle); set('formSub', F.regSub);
-})();
-const WA = (MB.get() && MB.get().site && MB.get().site.wa) || "201027052397";
+  WA = MB.waNumber();
+  try { await MB.initTurnstile('turnstileBox'); } catch (e) { console.error(e); }
+});
 let picked = {};
 
 document.querySelectorAll('.chips').forEach(g => {
@@ -335,7 +340,7 @@ function pickers(){
 }
 
 function msgText(){
-  const allOk = document.getElementById('ag1').checked && document.getElementById('ag2').checked && document.getElementById('ag3').checked;
+  const allOk = ['ag1','ag2','ag3','ag4'].every(id => document.getElementById(id).checked);
   return `📝 *تسجيل طفل — MindBloom Academy*
 🌼 ————— بيانات الطفل ————— 🌼
 👶 الاسم: ${v('cName')}
@@ -361,7 +366,7 @@ ${pickers()}
 📣 المصدر: ${v('pSource') || '—'}
 📝 ملاحظات: ${v('pNotes') || '—'}
 
-✍️ *الموافقات:* ${allOk ? '✅ وافق على البيانات واللائحة والطوارئ' : '⚠️ ناقصة'}
+✍️ *الموافقات:* ${allOk ? '✅ وافق على البيانات واللائحة والطوارئ والحفظ الإلكتروني' : '⚠️ ناقصة'}
 📸 التصوير: ${picked.cPhoto || '—'}
 
 📎 مرفق: ملف PDF بالبيانات (من فضلك أرفقيه في الرسالة) — التوقيع النهائي يتم أثناء الحضور.`;
@@ -380,7 +385,7 @@ async function makePdf(filename){
     ['ولي الأمر (أب)', v('fName') + ' — ' + egIntl(v('fPhone'))],
     ['ولي الأمر (أم)', v('mName') + ' — ' + egIntl(v('mPhone'))],
     ['طوارئ', v('pEmerg') || '—'], ['ملاحظات', v('pNotes') || '—'],
-    ['موافقة التصوير', picked.cPhoto || '—']
+    ['موافقة التصوير', picked.cPhoto || '—'], ['موافقة الحفظ الإلكتروني', 'نعم']
   ].map(r => `<tr><td class="k">${r[0]}</td><td>${r[1] || '—'}</td></tr>`).join('');
   document.getElementById('pdfSigNote').textContent =
     '⚠️ سيتم التوقيع على نسخة ورقية من هذه الاستمارة + الاطلاع على اللائحة الداخلية أثناء الحضور بالأكاديمية.';
@@ -391,31 +396,58 @@ async function makePdf(filename){
   node.style.display = 'none';
   const pdf = window.jspdf.jsPDF('p', 'mm', 'a4');
   const w = 210, h = canvas.height * w / canvas.width;
-  const img = canvas.toDataURL('image/png');
+  const img = canvas.toDataURL('image/jpeg', 0.88);
   const n = Math.max(1, Math.ceil(h / 297));
-  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'PNG', 0, -i * 297, w, h); }
+  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'JPEG', 0, -i * 297, w, h, undefined, 'FAST'); }
+  const pdfBase64 = pdf.output('datauristring').split(',')[1];
   pdf.save(filename);
-  return canvas.toDataURL('image/png').split(',')[1];
+  return pdfBase64;
 }
 
 async function send(){
   let ok = true;
-  if (!document.getElementById('ag1').checked || !document.getElementById('ag2').checked || !document.getElementById('ag3').checked){
-    alert('عشان نكمل التسجيل، لازم تدوسي الموافقات الثلاثة ✍️'); return;
+  if (!['ag1','ag2','ag3','ag4'].every(id => document.getElementById(id).checked)){
+    alert('عشان نكمل التسجيل، لازم توافقي على البنود الأربعة ✍️'); return;
   }
   if (!picked.cPhoto){ err(true, 'cPhotoErr'); ok = false; }
   if (!ok) return;
 
-  const filename = `MindBloom-تسجيل-${v('cName') || 'طفل'}-${Date.now()}.pdf`;
-  let b64 = null;
-  try { b64 = await makePdf(filename); } catch (e){ console.error(e); }
+  const token = MB.turnstileToken('turnstileBox');
+  if ((MB._cloud().turnstileSiteKey || '') && !token){ alert('من فضلك أكملي التحقق الأمني أولًا'); return; }
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = '⏳ جاري تجهيز وحفظ التسجيل…';
 
-  const rec = { id: Date.now(), type: 'تسجيل طفل', name: v('mName'), phone: egIntl(v('mPhone')), source: v('pSource') || '', date: new Date().toISOString(),
-    data: { child: v('cName'), age: v('cAge'), service: picked.cService, period: picked.cPeriod || '', area: v('cAddr') } };
-  MB.addSub(rec);
-  const url0 = MB.get().syncUrl;
-  if (url0 && b64){
-    try { fetch(url0, { method: 'POST', body: JSON.stringify({ ...rec, pdfName: filename, pdfBase64: b64 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}); } catch (e) {}
+  const filename = `MindBloom-تسجيل-${v('cName') || 'طفل'}-${Date.now()}.pdf`;
+  let b64;
+  try { b64 = await makePdf(filename); }
+  catch (e){ console.error(e); alert('تعذر تجهيز ملف PDF — حاولي مرة أخرى'); btn.disabled = false; btn.textContent = '💾 حفظ التسجيل مركزيًا + تحميل PDF + واتساب'; return; }
+
+  const rec = {
+    type: 'تسجيل طفل', name: v('mName'), phone: egIntl(v('mPhone')), source: v('pSource') || '',
+    data: {
+      child: {
+        name: v('cName'), dateOfBirth: v('cDOB'), age: v('cAge'), gender: picked.cGender || '',
+        siblings: v('cSib') || '', siblingOrder: v('cOrder') || '', address: v('cAddr'),
+        allergy: v('cAllergy') || '', medicinesOrConditions: v('cMed') || '', vaccinations: picked.cVax || ''
+      },
+      requestedServices: picked.cService || '', transport: picked.cTrans || '', preferredPeriod: picked.cPeriod || '',
+      authorizedPickup: [
+        { name: v('pk1'), phone: egIntl(v('pk1p')) },
+        { name: v('pk2'), phone: v('pk2p') ? egIntl(v('pk2p')) : '' },
+        { name: v('pk3'), phone: v('pk3p') ? egIntl(v('pk3p')) : '' }
+      ].filter(x => x.name || x.phone),
+      father: { name: v('fName'), phone: egIntl(v('fPhone')) },
+      mother: { name: v('mName'), phone: egIntl(v('mPhone')) },
+      preferredContact: picked.pPref || 'واتساب', emergencyContact: v('pEmerg') || '',
+      source: v('pSource') || '', notes: v('pNotes') || '', photoConsent: picked.cPhoto || '',
+      agreements: { dataAccuracy: true, internalPolicy: true, emergencyPlan: true, dataStorage: true }
+    }
+  };
+  try { await MB.addSub(rec, b64, filename, token); }
+  catch (e) {
+    console.error(e); MB.resetTurnstile('turnstileBox');
+    alert('لم يتم حفظ التسجيل مركزيًا: ' + (e.message || 'حاولي مرة أخرى'));
+    btn.disabled = false; btn.textContent = '💾 حفظ التسجيل مركزيًا + تحميل PDF + واتساب'; return;
   }
 
   const url = `https://wa.me/${WA}?text=${encodeURIComponent(msgText())}`;

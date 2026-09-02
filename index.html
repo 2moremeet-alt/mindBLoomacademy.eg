@@ -258,17 +258,6 @@
   .lbnav.next{left:18px}
   .lbnav.prev{right:18px}
 
-  /* ===== نافذة كلمة مرور الإدارة ===== */
-  .admin-modal{position:fixed;inset:0;background:rgba(10,20,35,.75);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
-  .admin-modal.on{display:flex}
-  .admin-box{background:#fff;border-radius:20px;padding:30px;width:100%;max-width:380px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.4)}
-  .admin-box h3{color:var(--navy);margin-bottom:6px}
-  .admin-box p{color:var(--muted);font-size:.85rem;margin-bottom:16px}
-  .admin-box input{width:100%;padding:13px;border:2px solid #e3ecf5;border-radius:12px;font-size:1rem;font-family:inherit;text-align:center;letter-spacing:2px}
-  .admin-box input:focus{outline:none;border-color:var(--turq)}
-  .admin-box .err{color:var(--pink);font-size:.8rem;margin-top:8px;display:none}
-  .admin-box .btn{margin-top:14px}
-
   /* ===== شارة "مفتوح دلوقتي" ===== */
   .openbadge{font-weight:800;padding:3px 12px;border-radius:999px;font-size:.72rem;white-space:nowrap}
   .openbadge.on{background:rgba(87,166,57,.3);color:#b7f08f}
@@ -610,25 +599,19 @@
   <div class="cap" id="lbCap"></div>
 </div>
 
-<!-- ══════════ نافذة كلمة المرور (الإدارة) ══════════ -->
-<div class="admin-modal" id="adminModal">
-  <div class="admin-box">
-    <h3>🔐 لوحة التحكم</h3>
-    <p>ادخلي كلمة مرور الإدارة للمتابعة</p>
-    <input type="password" id="adminPwd" placeholder="••••••••" autocomplete="off">
-    <div class="err" id="adminErr">كلمة المرور غلط — جربي تاني</div>
-    <button class="btn amber" onclick="tryAdmin()">دخول</button>
-    <button class="btn ghost" onclick="document.getElementById('adminModal').classList.remove('on')">إلغاء</button>
-  </div>
-</div>
-
+<script src="supabase-config.js"></script>
 <script src="config-v2.js"></script>
 <script>
-/* ═══════ تشغيل المحتوى من الإعدادات ═══════ */
-MB.init();
+/* ═══════ تشغيل المحتوى من الإعدادات المركزية ═══════ */
+MB.ready.then(() => {
+  MB.init();
+  initQuiz();
+  spyLinks = [...document.querySelectorAll('.menu a')];
+  spyLinks.forEach(a => a.addEventListener('click', () => document.getElementById('menu').classList.remove('open')));
+}).catch(e => console.error('MindBloom startup:', e));
 
 /* ═══════ الكيويز ═══════ */
-(function(){
+function initQuiz(){
   const c = MB.get();
   const QUIZ = c.quiz.questions, RES = c.quiz.results;
   let qi = 0; const scores = {};
@@ -656,7 +639,7 @@ MB.init();
   };
   window.__restart = function(){ qi = 0; for (const k in scores) delete scores[k]; renderQ(); };
   renderQ();
-})();
+}
 
 /* ═══════ لايTLightbox + تنقل ═══════ */
 let galFigs = [], lbIdx = 0;
@@ -678,7 +661,7 @@ document.addEventListener('keydown', e => {
 
 /* ═══════ الـ ScrollSpy + شريط التقدم + زر الأعلى ═══════ */
 const spySections = [...document.querySelectorAll('section[id]')];
-const spyLinks = [...document.querySelectorAll('.menu a')];
+let spyLinks = [...document.querySelectorAll('.menu a')];
 const pbar = document.getElementById('pbar');
 window.addEventListener('scroll', () => {
   document.getElementById('toTop').classList.toggle('on', scrollY > 600);
@@ -719,7 +702,7 @@ updOpen(); setInterval(updOpen, 60000);
   document.getElementById('cdlSub').textContent = (days <= 1 ? 'بكرة!' : days === 2 ? 'بعد يومين' : 'باقي ' + days + ' يوم') + ' — أول ٥ أماكن، بموعد مسبق';
 })();
 
-/* ═══════ بوابة الإدارة: ٣ ضغطات على © ثم كلمة المرور ═══════ */
+/* ═══════ رابط الإدارة المخفي: المصادقة الحقيقية داخل admin.html ═══════ */
 (function(){
   const trig = document.getElementById('secretTrig');
   let clicks = 0, timer = null;
@@ -727,26 +710,8 @@ updOpen(); setInterval(updOpen, 60000);
     clicks++;
     clearTimeout(timer);
     timer = setTimeout(() => clicks = 0, 1600);
-    if (clicks >= 3){
-      clicks = 0;
-      document.getElementById('adminModal').classList.add('on');
-      const inp = document.getElementById('adminPwd');
-      inp.value = '';
-      setTimeout(() => inp.focus(), 60);
-    }
+    if (clicks >= 3) location.href = 'admin.html';
   });
-  document.getElementById('adminPwd').addEventListener('keydown', e => { if (e.key === 'Enter') tryAdmin(); });
-  window.tryAdmin = function(){
-    const v = document.getElementById('adminPwd').value;
-    if (v === MB.PWD){
-      sessionStorage.setItem('mb_admin_ok', '1');
-      location.href = 'admin.html';
-    } else {
-      const err = document.getElementById('adminErr');
-      err.style.display = 'block';
-      document.getElementById('adminPwd').value = '';
-    }
-  };
 })();
 </script>
 </body>

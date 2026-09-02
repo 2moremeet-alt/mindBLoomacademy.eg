@@ -6,6 +6,7 @@
 <title>استبيان رضا أولياء الأمور | MindBloom Academy</title>
 <script src="lib/html2canvas.min.js"></script>
 <script src="lib/jspdf.umd.min.js"></script>
+<script src="supabase-config.js"></script>
 <script src="config-v2.js"></script>
 <style>
   :root{--navy:#17356b;--navy-d:#0f2547;--turq:#2ec4b6;--turq-d:#1fa396;--amber:#ffb703;--pink:#ef476f;--bg:#f7fafd;--ink:#1c2b3a;--muted:#5d7285}
@@ -70,7 +71,7 @@
     <p id="formSub">صوتكم يصنع فرقًا 💛 — ٥ دقايق من وقتكم تساعدنا نطوّر خدمتنا لأطفالكم. الرد سري تمامًا.</p>
   </div>
   <div class="body">
-    <div class="note">🌸 يُوزَّع كل ٣ شهور — رأيك بيروح مباشرة لمديرة الأكاديمية (عبر واتساب) ويبتنى عليه خطة التطوير.</div>
+    <div class="note">🌸 يُوزَّع كل ٣ شهور — رأيك يُحفظ بأمان في لوحة الإدارة، ويمكن إرساله أيضًا عبر واتساب، ويُبنى عليه تطوير الخدمة.</div>
 
     <h3 class="sec">١. تقييمك لجوانب الخدمة</h3>
     <div id="evals"></div>
@@ -93,13 +94,14 @@
     </div>
     <div class="fld" style="margin-top:12px"><label>اسمك (اختياري)</label><input id="pname" placeholder="اسمك الأول"></div>
 
-    <button class="btn wa" onclick="send()">💬 تحميل الـ PDF + الإرسال على واتساب</button>
+    <div id="turnstileBox" style="display:none;justify-content:center;margin:16px 0"></div>
+    <button class="btn wa" id="sendBtn" onclick="send()">💾 حفظ الاستبيان مركزيًا + تحميل PDF + واتساب</button>
     <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:10px">هيتنزّل ملف PDF برأيك وبيتفتح واتساب برسالة جاهزة — من فضلك أرفقي ملف الـ PDF 📎</p>
 
     <div class="done" id="done">
       <div class="big">💚</div>
-      <h2>شكرًا من القلب… رأيكم بوصلتنا 🌸</h2>
-      <p>اتنزّل ملف PDF برأيك — لو مفتحش واتساب تلقائيًا دوسي الزرار وأرفقيه في الرسالة. وهنرد عليكم في أقرب وقت.</p>
+      <h2>شكرًا من القلب… تم حفظ رأيكم 🌸</h2>
+      <p>وصل الاستبيان إلى لوحة الإدارة واتحفظت نسخة PDF خاصة وآمنة. لو مفتحش واتساب تلقائيًا دوسي الزرار وأرفقي نسختك.</p>
       <button class="btn wa" id="waBtn">💬 افتحي واتساب</button>
       <button class="btn" id="pdfBtn2">⬇️ إعادة تحميل الـ PDF</button>
       <p class="foot"><a href="index.html">← الرجوع للموقع</a></p>
@@ -124,15 +126,17 @@
 </div>
 
 <script>
-(function(){
+let WA = "201027052397";
+MB.ready.then(async () => {
   const F = (MB.get() || {}).forms || {};
-  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
   const L = (MB.get() || {}).site || {};
+  const set = (id, t) => { const el = document.getElementById(id); if (el && t) el.textContent = t; };
   const setSrc = (id, t) => { const el = document.getElementById(id); if (el && t) el.src = t; };
   setSrc('formLogo', L.logo); setSrc('pdfLogo', L.logo);
   set('formTitle', F.surTitle); set('formSub', F.surSub);
-})();
-const WA = (MB.get() && MB.get().site && MB.get().site.wa) || "201027052397";
+  WA = MB.waNumber();
+  try { await MB.initTurnstile('turnstileBox'); } catch (e) { console.error(e); }
+});
 const ASPECTS = ["النظافة والتعقيم اليومي","الأمان والإشراف","حنّية المعلمات وتعاملهم","التطور الملحوظ في طفلك","المحتوى والأنشطة","التقارير والتواصل مع الأهل","تعامل الإدارة وسرعة حل المشكلات","القيمة مقابل السعر"];
 const ratings = {};
 const em = ["😟","😐","🙂","😍"];
@@ -187,23 +191,39 @@ async function makePdf(filename){
   node.style.display = 'none';
   const pdf = window.jspdf.jsPDF('p', 'mm', 'a4');
   const w = 210, h = canvas.height * w / canvas.width;
-  const img = canvas.toDataURL('image/png');
+  const img = canvas.toDataURL('image/jpeg', 0.88);
   const n = Math.max(1, Math.ceil(h / 297));
-  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'PNG', 0, -i * 297, w, h); }
+  for (let i = 0; i < n; i++){ if (i > 0) pdf.addPage(); pdf.addImage(img, 'JPEG', 0, -i * 297, w, h, undefined, 'FAST'); }
+  const pdfBase64 = pdf.output('datauristring').split(',')[1];
   pdf.save(filename);
-  return canvas.toDataURL('image/png').split(',')[1];
+  return pdfBase64;
 }
 
 async function send(){
+  const token = MB.turnstileToken('turnstileBox');
+  if ((MB._cloud().turnstileSiteKey || '') && !token){ alert('من فضلك أكملي التحقق الأمني أولًا'); return; }
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = '⏳ جاري تجهيز وحفظ الاستبيان…';
+
   const filename = `MindBloom-استبيان-رضا-${Date.now()}.pdf`;
-  let b64 = null;
-  try { b64 = await makePdf(filename); } catch (e){ console.error(e); }
-  const rec = { id: Date.now(), type: 'استبيان رضا', name: pv() || '(بدون اسم)', phone: '', source: '', date: new Date().toISOString(),
-    data: { nps: nps ?? '', consent: consent || '' } };
-  MB.addSub(rec);
-  const url0 = MB.get().syncUrl;
-  if (url0 && b64){
-    try { fetch(url0, { method: 'POST', body: JSON.stringify({ ...rec, pdfName: filename, pdfBase64: b64 }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } }).catch(() => {}); } catch (e) {}
+  let b64;
+  try { b64 = await makePdf(filename); }
+  catch (e){ console.error(e); alert('تعذر تجهيز ملف PDF — حاولي مرة أخرى'); btn.disabled = false; btn.textContent = '💾 حفظ الاستبيان مركزيًا + تحميل PDF + واتساب'; return; }
+
+  const rec = {
+    type: 'استبيان رضا', name: pv() || '(بدون اسم)', phone: '', source: '',
+    data: {
+      ratings: ASPECTS.map((aspect, i) => ({ aspect, score: ratings[i] || null, label: ratings[i] ? starTxt[ratings[i]] : '' })),
+      nps: nps ?? null,
+      bestThing: q1v() || '', improvement: q2v() || '', requestedServices: q3v() || '',
+      testimonialConsent: consent || '', name: pv() || ''
+    }
+  };
+  try { await MB.addSub(rec, b64, filename, token); }
+  catch (e) {
+    console.error(e); MB.resetTurnstile('turnstileBox');
+    alert('لم يتم حفظ الاستبيان مركزيًا: ' + (e.message || 'حاولي مرة أخرى'));
+    btn.disabled = false; btn.textContent = '💾 حفظ الاستبيان مركزيًا + تحميل PDF + واتساب'; return;
   }
   const url = `https://wa.me/${WA}?text=${encodeURIComponent(msg())}`;
   window.open(url, '_blank');
