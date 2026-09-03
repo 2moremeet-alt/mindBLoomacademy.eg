@@ -370,7 +370,7 @@
   <nav>
     <div class="wrap">
       <a class="logo" href="#home" id="logoWrap">
-        <img id="siteLogo" src="images/logo-final.png" alt="MindBloom Academy" onerror="this.closest('.logo').classList.add('img-err')">
+        <img id="siteLogo" src="logo-final.png" alt="MindBloom Academy" onerror="this.closest('.logo').classList.add('img-err')">
         <span class="logo-fallback">🌸</span>
         <span><b id="navTitle">MindBloom Academy</b><small id="navSub">نرعى طفلك اليوم ونبني شخصيته للمستقبل</small></span>
       </a>
@@ -410,7 +410,7 @@
       </div>
     </div>
     <div class="hero-img" id="heroImgWrap">
-      <img id="heroImg" src="images/in-1-reception.jpg" alt="استقبال MindBloom Academy" onerror="this.closest('.hero-img').classList.add('img-err')">
+      <img id="heroImg" src="in-1-reception.jpg" alt="استقبال MindBloom Academy" onerror="this.closest('.hero-img').classList.add('img-err')">
       <div class="hero-fallback">🌸</div>
       <span class="hero-badge b1" id="heroBadge1">🏆 مركز تأهيل مدمج</span>
       <span class="hero-badge b2" id="heroBadge2">👶 من سنة كاملة</span>
@@ -508,8 +508,6 @@
   </div>
 </section>
 
-
-
 <!-- ══════════ FAQ ══════════ -->
 <section id="faq">
   <div class="wrap">
@@ -584,7 +582,9 @@
   </a>
   <a class="fab assess" href="evaluation.html">🎁<br>تقييم<br>مجاني<span class="tip">احجزي موعد تقييم مجاني</span></a>
 </div>
+
 <button class="totop" id="toTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="لأعلى">↑</button>
+
 <div class="mbar">
   <a class="wa" id="mbarWa" href="https://wa.me/201027052397?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%D8%AC%D8%AF%D8%A7%D9%8B%D8%8C%20%D8%A8%D8%AF%D8%A7%20%D8%A3%D8%B3%D8%A3%D9%84%D9%8A%20%D8%B9%D9%86%20MindBloom" target="_blank">💬 واتساب</a>
   <a class="ev" id="mbarEv" href="evaluation.html">🎁 تقييم بموعد</a>
@@ -601,6 +601,7 @@
 
 <script src="supabase-config.js"></script>
 <script src="config-v2.js"></script>
+
 <script>
 /* ═══════ تشغيل المحتوى من الإعدادات المركزية ═══════ */
 MB.ready.then(() => {
@@ -616,45 +617,89 @@ function initQuiz(){
   const QUIZ = c.quiz.questions, RES = c.quiz.results;
   let qi = 0; const scores = {};
   const qb = document.getElementById('quizBody'), qbar = document.getElementById('quizBar'), qdots = document.getElementById('quizDots');
-  for (let i = 0; i < QUIZ.length; i++) qdots.insertAdjacentHTML('beforeend', '<i></i>');
+
+  for (let i = 0; i < QUIZ.length; i++) {
+    qdots.insertAdjacentHTML('beforeend', '<i></i>');
+  }
+
   function renderQ(){
     const q = QUIZ[qi];
     qbar.style.width = (qi / QUIZ.length * 100) + '%';
     [...qdots.children].forEach((d, i) => d.classList.toggle('on', i <= qi));
+
     qb.innerHTML = `<div class="quiz-q">${q.q}</div><div class="quiz-opts">` +
       q.opts.map(o => `<div class="quiz-opt" onclick="window.__ans('${o.d}')">${o.t}</div>`).join('') + '</div>';
   }
+
   window.__ans = function(d){
-    scores[d] = (scores[d] || 0) + 1; qi++;
-    if (qi < QUIZ.length) renderQ();
-    else {
+    scores[d] = (scores[d] || 0) + 1;
+    qi++;
+
+    if (qi < QUIZ.length) {
+      renderQ();
+    } else {
       const win = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
       const r = RES[win] || RES.special;
+
       qbar.style.width = '100%';
       [...qdots.children].forEach(d => d.classList.add('on'));
+
       qb.innerHTML = `<div class="quiz-res"><div class="big">${r.big}</div><h3>${r.t}</h3><p>${r.p}</p>
         <a class="btn amber" href="evaluation.html">احجزي موعد تقييم 🎁</a>
         <p style="margin-top:14px"><a href="#" onclick="window.__restart();return false" style="font-weight:700">↻ أعدوا الاختبار</a></p></div>`;
     }
   };
-  window.__restart = function(){ qi = 0; for (const k in scores) delete scores[k]; renderQ(); };
+
+  window.__restart = function(){
+    qi = 0;
+    for (const k in scores) delete scores[k];
+    renderQ();
+  };
+
   renderQ();
 }
 
 /* ═══════ لايTLightbox + تنقل ═══════ */
 let galFigs = [], lbIdx = 0;
+
 function showLb(){
-  const f = galFigs[lbIdx]; if (!f) return;
+  const f = galFigs[lbIdx];
+  if (!f) return;
+
   document.getElementById('lbImg').src = f.querySelector('img').src;
-  document.getElementById('lbCap').textContent = f.querySelector('figcaption').textContent + '  (' + (lbIdx + 1) + ' / ' + galFigs.length + ')';
+  document.getElementById('lbCap').textContent =
+    f.querySelector('figcaption').textContent +
+    '  (' + (lbIdx + 1) + ' / ' + galFigs.length + ')';
+
   document.getElementById('lb').classList.add('on');
 }
-function openLb(f){ galFigs = [...document.querySelectorAll('.gal figure')]; lbIdx = galFigs.indexOf(f); showLb(); }
-function lbNav(e, dir){ e.stopPropagation(); galFigs = galFigs.length ? galFigs : [...document.querySelectorAll('.gal figure')]; lbIdx = (lbIdx + dir + galFigs.length) % galFigs.length; showLb(); }
-function closeLb(e, force){ if (force || e.target.id === 'lb' || e.target.classList.contains('x')) document.getElementById('lb').classList.remove('on'); }
+
+function openLb(f){
+  galFigs = [...document.querySelectorAll('.gal figure')];
+  lbIdx = galFigs.indexOf(f);
+  showLb();
+}
+
+function lbNav(e, dir){
+  e.stopPropagation();
+  galFigs = galFigs.length ? galFigs : [...document.querySelectorAll('.gal figure')];
+  lbIdx = (lbIdx + dir + galFigs.length) % galFigs.length;
+  showLb();
+}
+
+function closeLb(e, force){
+  if (force || e.target.id === 'lb' || e.target.classList.contains('x')) {
+    document.getElementById('lb').classList.remove('on');
+  }
+}
+
 document.addEventListener('keydown', e => {
   if (!document.getElementById('lb').classList.contains('on')) return;
-  if (e.key === 'Escape') document.getElementById('lb').classList.remove('on');
+
+  if (e.key === 'Escape') {
+    document.getElementById('lb').classList.remove('on');
+  }
+
   if (e.key === 'ArrowLeft') lbNav(e, 1);
   if (e.key === 'ArrowRight') lbNav(e, -1);
 });
@@ -663,54 +708,119 @@ document.addEventListener('keydown', e => {
 const spySections = [...document.querySelectorAll('section[id]')];
 let spyLinks = [...document.querySelectorAll('.menu a')];
 const pbar = document.getElementById('pbar');
+
 window.addEventListener('scroll', () => {
   document.getElementById('toTop').classList.toggle('on', scrollY > 600);
+
   const h = document.documentElement;
-  pbar.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+  pbar.style.width =
+    (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+
   let cur = 'home';
-  spySections.forEach(s => { if (s.offsetTop - 160 <= window.scrollY) cur = s.id; });
-  spyLinks.forEach(a => a.style.background = a.getAttribute('href') === '#' + cur ? 'rgba(46,196,182,.16)' : '');
+
+  spySections.forEach(s => {
+    if (s.offsetTop - 160 <= window.scrollY) {
+      cur = s.id;
+    }
+  });
+
+  spyLinks.forEach(a =>
+    a.style.background =
+      a.getAttribute('href') === '#' + cur
+        ? 'rgba(46,196,182,.16)'
+        : ''
+  );
 });
-document.querySelectorAll('.menu a').forEach(a => a.addEventListener('click', () => document.getElementById('menu').classList.remove('open')));
+
+document.querySelectorAll('.menu a').forEach(a =>
+  a.addEventListener('click', () =>
+    document.getElementById('menu').classList.remove('open')
+  )
+);
 
 /* ═══════ شارة "مفتوح دلوقتي" (حي) ═══════ */
 function updOpen(){
-  const now = new Date(), d = now.getDay(), h = now.getHours() + now.getMinutes()/60;
-  const openDay = d !== 5; /* الجمعة إجازة */
+  const now = new Date();
+  const d = now.getDay();
+  const h = now.getHours() + now.getMinutes()/60;
+
+  const openDay = d !== 5;
   const openHour = (h >= 8 && h < 15) || (h >= 16 && h < 21);
+
   const b = document.getElementById('openBadge');
   if (!b) return;
-  if (openDay && openHour){ b.textContent = '● مفتوح الآن'; b.className = 'openbadge on'; }
-  else { b.textContent = '● مغلق الآن'; b.className = 'openbadge off'; }
+
+  if (openDay && openHour){
+    b.textContent = '● مفتوح الآن';
+    b.className = 'openbadge on';
+  } else {
+    b.textContent = '● مغلق الآن';
+    b.className = 'openbadge off';
+  }
 }
-updOpen(); setInterval(updOpen, 60000);
+
+updOpen();
+setInterval(updOpen, 60000);
 
 /* ═══════ عدّاد يوم التقييم المجاني (أول سبت من كل شهر) ═══════ */
 (function(){
   if (!document.getElementById('cdlTitle')) return;
-  const now = new Date(); let y = now.getFullYear(), m = now.getMonth(), target = null;
-  const AR_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  const now = new Date();
+  let y = now.getFullYear();
+  let m = now.getMonth();
+  let target = null;
+
+  const AR_MONTHS = [
+    'يناير','فبراير','مارس','أبريل','مايو','يونيو',
+    'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'
+  ];
+
   for (let i = 0; i < 2 && !target; i++){
     const first = new Date(y, m, 1);
     const d = new Date(y, m, 1 + ((6 - first.getDay() + 7) % 7));
+
     if (d > now) target = d;
-    m++; if (m > 11){ m = 0; y++; }
+
+    m++;
+
+    if (m > 11){
+      m = 0;
+      y++;
+    }
   }
+
   if (!target) return;
+
   const days = Math.ceil((target - new Date()) / 86400000);
-  document.getElementById('cdlTitle').textContent = 'يوم التقييم المجاني القادم — السبت ' + target.getDate() + ' ' + AR_MONTHS[target.getMonth()];
-  document.getElementById('cdlSub').textContent = (days <= 1 ? 'بكرة!' : days === 2 ? 'بعد يومين' : 'باقي ' + days + ' يوم') + ' — أول ٥ أماكن، بموعد مسبق';
+
+  document.getElementById('cdlTitle').textContent =
+    'يوم التقييم المجاني القادم — السبت ' +
+    target.getDate() + ' ' +
+    AR_MONTHS[target.getMonth()];
+
+  document.getElementById('cdlSub').textContent =
+    (days <= 1 ? 'بكرة!' :
+     days === 2 ? 'بعد يومين' :
+     'باقي ' + days + ' يوم') +
+    ' — أول ٥ أماكن، بموعد مسبق';
 })();
 
 /* ═══════ رابط الإدارة المخفي: المصادقة الحقيقية داخل admin.html ═══════ */
 (function(){
   const trig = document.getElementById('secretTrig');
-  let clicks = 0, timer = null;
+  let clicks = 0;
+  let timer = null;
+
   trig.addEventListener('click', () => {
     clicks++;
+
     clearTimeout(timer);
     timer = setTimeout(() => clicks = 0, 1600);
-    if (clicks >= 3) location.href = 'admin.html';
+
+    if (clicks >= 3) {
+      location.href = 'admin.html';
+    }
   });
 })();
 </script>
